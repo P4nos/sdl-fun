@@ -1,5 +1,7 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_timer.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -11,10 +13,8 @@
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
-const float framerate = 60.0;
-const float dt = 1.0 / framerate;
-const float g = 9.80;
-const int num_circles = 10;
+const float g = 9.80; // gravity in pixels/s^2
+const int num_circles = 150;
 
 typedef struct Circle {
   float xcenter;
@@ -23,6 +23,7 @@ typedef struct Circle {
   float dx;
   float dy;
   float yvelocity;
+  float lastupdated;
 } Circle;
 
 // Define the structure for a linked list node
@@ -116,10 +117,7 @@ void clear_screen() {
   SDL_RenderClear(state.renderer);
 }
 
-void redraw() {
-  SDL_RenderPresent(state.renderer);
-  clear_screen();
-}
+void present() { SDL_RenderPresent(state.renderer); }
 
 int setup() {
   // Initialize SDL
@@ -167,12 +165,14 @@ Circle create_circle() {
       .xcenter = (float)randInt(0, SCREEN_WIDTH),
       .radius = 10.0,
       .yvelocity = 0.0,
+      .dx = 0.0,
+      .dy = 0.0,
   };
   return c;
 }
 
-// Function to create a new node
-Node *create_node() {
+// Function to add a node to the end of the list
+void add_node() {
   Node *newNode = (Node *)malloc(sizeof(Node));
   if (!newNode) {
     printf("Memory allocation failed\n");
@@ -180,12 +180,7 @@ Node *create_node() {
   }
   newNode->object = create_circle();
   newNode->next = NULL;
-  return newNode;
-}
 
-// Function to add a node to the end of the list
-void add_node() {
-  Node *newNode = create_node();
   if (state.head == NULL) {
     state.head = newNode;
   } else {
@@ -206,28 +201,20 @@ void freelist() {
   }
 }
 
-bool user_interrupt() {
-  SDL_Event e;
-  if (SDL_PollEvent(&e) != 0) {
-    // User requests quit
-    if (e.type == SDL_QUIT) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void update_location(float dt) {
-  float dv = dt * g;
+void update_location() {
 
   Node *temp = state.head;
   Node *prev = NULL;
 
   while (temp != NULL) {
-    temp->object.yvelocity += dt * g;
-    temp->object.ycenter += temp->object.yvelocity * dt;
+    Uint32 time = SDL_GetTicks();
+    float dt = (time - temp->object.lastupdated) / 1000.0f;
+    float dv = dt * g;
 
-    // TODO: take into account the radius.
+    temp->object.yvelocity += dt * g;
+    temp->object.dy += g * dt * dt;
+    temp->object.ycenter += temp->object.dy;
+
     if (temp->object.ycenter - temp->object.radius < 0 ||
         temp->object.ycenter + temp->object.radius > SCREEN_HEIGHT ||
         temp->object.xcenter - temp->object.radius < 0 ||
@@ -235,8 +222,6 @@ void update_location(float dt) {
       Node *nodeToRemove = temp;
 
       if (prev == NULL) {
-        printf("new head\n");
-        printf("%f\n", temp->object.ycenter);
         state.head = temp->next;
         temp = temp->next;
       } else {
@@ -254,10 +239,10 @@ void update_location(float dt) {
 void render_circles() {
   Node *temp = state.head;
   while (temp != NULL) {
-    redraw();
     draw_circle(&temp->object);
     temp = temp->next;
   }
+  present();
 }
 
 void generate_circles() {
@@ -275,13 +260,24 @@ int main(int argc, char *args[]) {
 
   generate_circles();
   // runs until user exits
-  uint64_t t0 = SDL_GetTicks();
+  Uint32 t0 = SDL_GetTicks();
 
-  while (!user_interrupt()) {
-    uint32_t now = SDL_GetTicks();
-    float dt = (now - t0) / 1000.0f;
+  SDL_Event e;
+  bool running = true;
+  while (running) {
 
-    update_location(dt);
+    clear_screen();
+    // event loop
+    while (SDL_PollEvent(&e) != 0) {
+      switch (e.type) {
+      case SDL_QUIT:
+        running = false;
+        break;
+      }
+    }
+    // physics loop
+    update_location();
+    // render loop
     render_circles();
   }
 
