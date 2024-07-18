@@ -161,7 +161,7 @@ int randInt(int min, int max) {
 
 Circle create_circle() {
   Circle c = {
-      .ycenter = (float)randInt(0, SCREEN_HEIGHT),
+      .ycenter = (float)randInt(0, SCREEN_HEIGHT / 2),
       .xcenter = (float)randInt(0, SCREEN_WIDTH),
       .radius = 10.0,
       .yvelocity = 0.0,
@@ -185,6 +185,7 @@ void add_node() {
     state.head = newNode;
   } else {
     Node *temp = state.head;
+    // move at the end of the list and append the new node
     while (temp->next != NULL) {
       temp = temp->next;
     }
@@ -211,28 +212,23 @@ void update_location() {
     float dt = (time - temp->object.lastupdated) / 1000.0f;
     float dv = dt * g;
 
-    temp->object.yvelocity += dt * g;
-    temp->object.dy += g * dt * dt;
-    temp->object.ycenter += temp->object.dy;
-
-    if (temp->object.ycenter - temp->object.radius < 0 ||
-        temp->object.ycenter + temp->object.radius > SCREEN_HEIGHT ||
-        temp->object.xcenter - temp->object.radius < 0 ||
-        temp->object.xcenter + temp->object.radius > SCREEN_WIDTH) {
-      Node *nodeToRemove = temp;
-
-      if (prev == NULL) {
-        state.head = temp->next;
-        temp = temp->next;
-      } else {
-        prev->next = temp->next;
-        temp = temp->next;
-      }
-      free(nodeToRemove);
+    // don't let the circles move past the end of the screen height
+    if (temp->object.ycenter + temp->object.radius < SCREEN_HEIGHT) {
+      temp->object.yvelocity += dt * g;
+      temp->object.dy += g * dt * dt;
+      temp->object.ycenter += temp->object.dy;
     } else {
-      prev = temp;
-      temp = temp->next;
+      temp->object.yvelocity = 0.0;
+      temp->object.dy += 0.0;
+      temp->object.ycenter = SCREEN_HEIGHT - temp->object.radius;
     }
+
+    // detect collisions
+    // TODO
+
+    // move to next enty in the list
+    prev = temp;
+    temp = temp->next;
   }
 }
 
