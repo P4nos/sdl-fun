@@ -13,10 +13,10 @@ SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
 
 # Default target
-all: $(TARGET)
+all: run 
 
 # Link the object files to create the final executable
-$(TARGET): $(OBJS)
+build: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(CLIBS) 
 
 # Compile the .c files to .o files
@@ -26,6 +26,9 @@ $(TARGET): $(OBJS)
 # Clean up build artifacts
 clean:
 	rm -f $(OBJS) $(TARGET)
+
+run: clean build
+	./sdl_fun
 
 # Phony targets
 .PHONY: all clean

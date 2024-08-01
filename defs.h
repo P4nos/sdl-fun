@@ -1,11 +1,20 @@
 #include <SDL2/SDL_render.h>
 #include <stdint.h>
 
+#include "draw.h"
+
+#ifdef DEBUG
+#define DEBUG_LOGS 1
+#else
+#define DEBUG_LOGS 0
+#endif
+
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
+#define BORDER_WIDTH 5
 
 #define GRAVITY 9.80 // gravity in pixels/s^2
-#define NUM_CIRCLES 150
+#define NUM_CIRCLES 10
 
 typedef struct Circle {
   float xcenter;
@@ -14,7 +23,11 @@ typedef struct Circle {
   float dx;
   float dy;
   float yvelocity;
+  float xvelocity;
   float lastupdated;
+  float m; // mass
+  Color color;
+  int id;
 } Circle;
 
 // Define the structure for a linked list node
@@ -28,14 +41,3 @@ typedef struct State {
   SDL_Window *window;
   Node *head;
 } State;
-
-struct SimulationState {
-  double velocity;
-  double position;
-};
-
-typedef struct Color {
-  uint8_t r;
-  uint8_t g;
-  uint8_t b;
-} Color;
