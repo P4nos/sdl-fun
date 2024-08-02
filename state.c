@@ -1,25 +1,17 @@
 #include "physics.h"
+#include "util.h"
 
 extern State state;
 
-int randInt(int min, int max) {
-  return min + rand() / (RAND_MAX / (max - min + 1) + 1);
-}
-
 // Function to add a node to the end of the list
-void add_node() {
+void add_node(Circle c) {
   Node *newNode = (Node *)malloc(sizeof(Node));
   if (!newNode) {
     printf("Memory allocation failed\n");
     exit(1);
   }
 
-  newNode->object = (Circle){.ycenter = (float)randInt(0, SCREEN_HEIGHT / 2),
-                             .xcenter = (float)randInt(0, SCREEN_WIDTH),
-                             .radius = 10.0,
-                             .yvelocity = 0.0,
-                             .dx = 0.0,
-                             .dy = 0.0};
+  newNode->object = c;
   newNode->next = NULL;
 
   if (state.head == NULL) {
@@ -46,15 +38,26 @@ void reset_state() {
 void update_state() {
   Node *temp = state.head;
   while (temp != NULL) {
-    // detect collisions
     // calculate new location for object
     calculate_location(temp);
+    // detect collisions
+    handle_object_collisions(temp);
+    handle_border_collisions(temp);
     temp = temp->next;
   }
 }
 
 void init_state() {
   for (int i = 0; i < NUM_CIRCLES; i++) {
-    add_node();
+    Circle c = {.ycenter = (float)rand_int_range(0, SCREEN_HEIGHT / 2),
+                .xcenter = (float)rand_int_range(0, SCREEN_WIDTH),
+                .radius = 2.0,
+                .yvelocity = (float)rand_int_range(-200, 200),
+                .xvelocity = (float)rand_int_range(-200, 200),
+                .m = 1.0,
+                .dx = 0.0,
+                .dy = 0.0,
+                .color = get_rand_color()};
+    add_node(c);
   }
 }

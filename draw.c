@@ -1,10 +1,15 @@
 #include "defs.h"
+#include "util.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_render.h>
+#include <math.h>
 
 Color Color_RED = {255, 0, 0};
 Color Color_BLUE = {0, 0, 255};
 Color Color_GREEN = {0, 255, 0};
 Color Color_BLACK = {0, 0, 0};
+Color Color_BG = {252, 239, 150};
 
 extern State state;
 
@@ -13,47 +18,63 @@ void set_draw_color(Color color) {
 }
 
 void draw_circle(Circle *c) {
-
-  set_draw_color(Color_RED);
-  const int32_t diameter = (c->radius * 2);
-
-  int32_t x = (c->radius - 1);
+  int32_t r = c->radius;
+  int32_t x = -r;
   int32_t y = 0;
-  int32_t tx = 1;
-  int32_t ty = 1;
-  int32_t error = (tx - diameter);
+  int32_t err = 2 - 2 * c->radius;
 
-  while (x >= y) {
-    //  Each of the following renders an octant of the circle
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + x),
-                        round(c->ycenter - y));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + x),
-                        round(c->ycenter + y));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter - x),
-                        round(c->ycenter - y));
+  set_draw_color(c->color);
+
+  do {
     SDL_RenderDrawPoint(state.renderer, round(c->xcenter - x),
                         round(c->ycenter + y));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + y),
-                        round(c->ycenter - x));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + y),
-                        round(c->ycenter + x));
     SDL_RenderDrawPoint(state.renderer, round(c->xcenter - y),
                         round(c->ycenter - x));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter - y),
+    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + x),
+                        round(c->ycenter - y));
+    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + y),
                         round(c->ycenter + x));
+    r = err;
+    if (r <= y)
+      err += ++y * 2 + 1;
+    if (r > x || err > y)
+      err += ++x * 2 + 1;
+  } while (x < 0);
+}
 
-    if (error <= 0) {
-      ++y;
-      error += ty;
-      ty += 2;
-    }
+Color get_rand_color() {
+  return (Color){
+      .r = rand_int_range(0, 255),
+      .b = rand_int_range(0, 255),
+      .g = rand_int_range(0, 255),
+  };
+}
 
-    if (error > 0) {
-      --x;
-      tx += 2;
-      error += (tx - diameter);
-    }
+void draw_velocity_vector(Circle *c) {
+  float vector_len_px = 30.;
+  float theta = atanf(c->yvelocity / c->xvelocity);
+
+  // "default case, both x and y are positive"
+  float dy = vector_len_px * sinf(theta);
+  float dx = vector_len_px * cosf(theta);
+
+  if (c->xvelocity < 0. && c->yvelocity >= 0.) {
+    theta = atanf(c->xvelocity / c->yvelocity);
+    dx = vector_len_px * sinf(theta);
+    dy = vector_len_px * cosf(theta);
   }
+  if (c->xvelocity < 0. && c->yvelocity <= 0.) {
+    theta = atanf(c->xvelocity / c->yvelocity);
+    dx = vector_len_px * cosf(theta);
+    dy = vector_len_px * sinf(theta);
+  }
+  if (c->xvelocity > 0. && c->yvelocity <= 0.) {
+    dx = vector_len_px * cosf(theta);
+    dy = vector_len_px * sinf(theta);
+  }
+
+  SDL_RenderDrawLine(state.renderer, c->xcenter, c->ycenter,
+                     c->xcenter + round(dx), c->ycenter + round(dy));
 }
 
 void cleanup() {
@@ -64,12 +85,34 @@ void cleanup() {
 }
 
 void clear_screen() {
-  set_draw_color(Color_BLACK);
+  set_draw_color(Color_BG);
 
   SDL_RenderClear(state.renderer);
 }
 
 void present() { SDL_RenderPresent(state.renderer); }
+
+void draw_borders() {
+  SDL_Rect borders[4];
+  SDL_Rect top = {.x = 0, .y = 0, .w = SCREEN_WIDTH, .h = BORDER_WIDTH};
+  SDL_Rect right = {.y = 0,
+                    .x = SCREEN_WIDTH - BORDER_WIDTH,
+                    .w = BORDER_WIDTH,
+                    .h = SCREEN_HEIGHT};
+  SDL_Rect bottom = {.x = 0,
+                     .y = SCREEN_HEIGHT - BORDER_WIDTH,
+                     .w = SCREEN_WIDTH,
+                     .h = BORDER_WIDTH};
+  SDL_Rect left = {.x = 0, .y = 0, .w = BORDER_WIDTH, .h = SCREEN_HEIGHT};
+
+  borders[0] = top;
+  borders[1] = right;
+  borders[2] = bottom;
+  borders[3] = left;
+
+  set_draw_color(Color_BLACK);
+  SDL_RenderFillRects(state.renderer, borders, 4);
+}
 
 int setup() {
   // Initialize SDL
@@ -80,8 +123,8 @@ int setup() {
 
   // Create window
   SDL_Window *window = SDL_CreateWindow(
-      "SDL2 Line Drawing", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-      SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+      "Simple particle engine", SDL_WINDOWPOS_UNDEFINED,
+      SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
   if (window == NULL) {
     printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
     SDL_Quit();
@@ -111,7 +154,9 @@ void render() {
   Node *temp = state.head;
   while (temp != NULL) {
     draw_circle(&temp->object);
+    //    draw_velocity_vector(&temp->object);
     temp = temp->next;
   }
+  draw_borders();
   present();
 }

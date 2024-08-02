@@ -14,7 +14,7 @@
 #define BORDER_WIDTH 5
 
 #define GRAVITY 9.80 // gravity in pixels/s^2
-#define NUM_CIRCLES 10
+#define NUM_CIRCLES 160
 
 typedef struct Circle {
   float xcenter;

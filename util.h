@@ -1,2 +1,1 @@
-#include "defs.h"
-void print_circle_info(Circle c);
+int rand_int_range(int lower, int upper);
