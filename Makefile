@@ -1,7 +1,7 @@
 # Define the compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -fopenmp
-CLIBS = -lSDL2 -lm
+CLIBS = -lSDL2 -lSDL2_ttf -lm
 
 # Define the executable name
 TARGET = sdl_fun

@@ -2,6 +2,7 @@
 #include "util.h"
 #include "allocator.h"
 #include <omp.h>
+#include <SDL2/SDL_timer.h>
 
 extern State state;
 
@@ -76,6 +77,9 @@ void update_state() {
 void init_state() {
   state.particles = allocator_get_pool();
   state.particle_count = 0;
+  state.fps = 0.0f;
+  state.last_fps_update = SDL_GetTicks();
+  state.frame_count = 0;
   
   for (int i = 0; i < NUM_CIRCLES; i++) {
     Circle c = {.ycenter = (float)rand_int_range(0, SCREEN_HEIGHT / 2),
@@ -89,5 +93,18 @@ void init_state() {
                 .color = get_rand_color(),
                 .id = i};
     add_particle(c);
+  }
+}
+
+void update_fps() {
+  state.frame_count++;
+  Uint32 current_time = SDL_GetTicks();
+  Uint32 elapsed = current_time - state.last_fps_update;
+  
+  // Update FPS every 500ms
+  if (elapsed >= 500) {
+    state.fps = (float)state.frame_count * 1000.0f / (float)elapsed;
+    state.frame_count = 0;
+    state.last_fps_update = current_time;
   }
 }

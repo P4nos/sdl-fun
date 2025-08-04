@@ -4,11 +4,13 @@
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <math.h>
+#include <stdio.h>
 
 Color Color_RED = {255, 0, 0};
 Color Color_BLUE = {0, 0, 255};
 Color Color_GREEN = {0, 255, 0};
 Color Color_BLACK = {0, 0, 0};
+Color Color_WHITE = {255, 255, 255};
 Color Color_BG = {252, 239, 150};
 
 extern State state;
@@ -78,9 +80,18 @@ void draw_velocity_vector(Circle *c) {
 }
 
 void cleanup() {
+  // Close font
+  if (state.font) {
+    TTF_CloseFont(state.font);
+    state.font = NULL;
+  }
+
   // Destroy renderer and window
   SDL_DestroyRenderer(state.renderer);
   SDL_DestroyWindow(state.window);
+
+  // Quit SDL subsystems
+  TTF_Quit();
   SDL_Quit();
 }
 
@@ -121,6 +132,12 @@ int setup() {
     return 1;
   }
 
+  // Initialize SDL_ttf
+  if (TTF_Init() < 0) {
+    printf("Could not initialize SDL_ttf: %s\n", TTF_GetError());
+    return 1;
+  }
+
   // Create window
   SDL_Window *window = SDL_CreateWindow(
       "Simple particle engine", SDL_WINDOWPOS_UNDEFINED,
@@ -134,8 +151,8 @@ int setup() {
   state.window = window;
 
   // Create renderer
-  SDL_Renderer *renderer = SDL_CreateRenderer(
-      window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
+  SDL_Renderer *renderer =
+      SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
   if (renderer == NULL) {
     printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
     SDL_DestroyWindow(window);
@@ -146,9 +163,64 @@ int setup() {
   clear_screen();
   state.renderer = renderer;
 
+  // Load font (try common system font paths)
+  state.font =
+      TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16);
+  if (!state.font) {
+    state.font = TTF_OpenFont("/System/Library/Fonts/Arial.ttf", 16);
+  }
+  if (!state.font) {
+    state.font = TTF_OpenFont("/usr/share/fonts/TTF/arial.ttf", 16);
+  }
+  if (!state.font) {
+    printf("Could not load font: %s\n", TTF_GetError());
+    return 1;
+  }
+
   state.particles = NULL;
   state.particle_count = 0;
   return 0;
+}
+
+void draw_fps() {
+  char fps_text[32];
+  snprintf(fps_text, sizeof(fps_text), "FPS: %.0f", state.fps);
+
+  // Create surface from text
+  SDL_Color white = {255, 255, 255, 255};
+  SDL_Surface *text_surface = TTF_RenderText_Solid(state.font, fps_text, white);
+  if (!text_surface) {
+    return;
+  }
+
+  // Create texture from surface
+  SDL_Texture *text_texture =
+      SDL_CreateTextureFromSurface(state.renderer, text_surface);
+  if (!text_texture) {
+    SDL_FreeSurface(text_surface);
+    return;
+  }
+
+  // Get text dimensions
+  int text_width = text_surface->w;
+  int text_height = text_surface->h;
+  SDL_FreeSurface(text_surface);
+
+  // Position text in top-right corner
+  SDL_Rect text_rect = {SCREEN_WIDTH - text_width - 10, 10, text_width,
+                        text_height};
+
+  // Draw background rectangle
+  SDL_Rect bg_rect = {text_rect.x - 5, text_rect.y - 2, text_width + 10,
+                      text_height + 4};
+  set_draw_color(Color_BLACK);
+  SDL_RenderFillRect(state.renderer, &bg_rect);
+
+  // Render text
+  SDL_RenderCopy(state.renderer, text_texture, NULL, &text_rect);
+
+  // Cleanup
+  SDL_DestroyTexture(text_texture);
 }
 
 void render() {
@@ -157,5 +229,6 @@ void render() {
     //    draw_velocity_vector(&state.particles[i]);
   }
   draw_borders();
+  draw_fps();
   present();
 }

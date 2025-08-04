@@ -53,6 +53,8 @@ int main() {
     clear_screen();
     // physics loop
     update_state();
+    // update fps counter
+    update_fps();
     // render loop
     render();
   }

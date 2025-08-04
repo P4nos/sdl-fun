@@ -2,6 +2,7 @@
 #define DEFS_H
 
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdint.h>
 
 #include "draw.h"
@@ -49,6 +50,10 @@ typedef struct State {
   Circle *particles;
   int particle_count;
   GridCell grid[GRID_HEIGHT][GRID_WIDTH];
+  float fps;
+  Uint32 last_fps_update;
+  int frame_count;
+  TTF_Font *font;
 } State;
 
 #endif
