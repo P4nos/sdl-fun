@@ -6,6 +6,7 @@
 
 #include "defs.h"
 #include "state.h"
+#include "allocator.h"
 
 State state;
 
@@ -15,6 +16,11 @@ int main() {
   if (setup() > 0) {
     exit(-1);
   };
+
+  if (allocator_init(NUM_CIRCLES) < 0) {
+    cleanup();
+    exit(-1);
+  }
 
   init_state();
 
@@ -49,5 +55,6 @@ int main() {
 
   cleanup();
   reset_state();
+  allocator_cleanup();
   return 0;
 }

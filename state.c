@@ -1,11 +1,12 @@
 #include "physics.h"
 #include "util.h"
+#include "allocator.h"
 
 extern State state;
 
 // Function to add a node to the end of the list
 void add_node(Circle c) {
-  Node *newNode = (Node *)malloc(sizeof(Node));
+  Node *newNode = allocator_alloc_node();
   if (!newNode) {
     printf("Memory allocation failed\n");
     exit(1);
@@ -31,7 +32,7 @@ void reset_state() {
   while (state.head != NULL) {
     temp = state.head;
     state.head = state.head->next;
-    free(temp);
+    allocator_free_node(temp);
   }
 }
 
