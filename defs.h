@@ -33,16 +33,11 @@ typedef struct Circle {
   int id;
 } Circle;
 
-// Define the structure for a linked list node
-typedef struct Node {
-  Circle object;
-  struct Node *next;
-} Node;
-
 typedef struct State {
   SDL_Renderer *renderer;
   SDL_Window *window;
-  Node *head;
+  Circle *particles;
+  int particle_count;
 } State;
 
 #endif

@@ -4,7 +4,7 @@
 #include "defs.h"
 
 typedef struct Allocator {
-  Node *pool;
+  Circle *pool;
   int *free_list;
   int capacity;
   int next_free;
@@ -12,9 +12,10 @@ typedef struct Allocator {
 } Allocator;
 
 int allocator_init(int capacity);
-Node *allocator_alloc_node();
-void allocator_free_node(Node *node);
+int allocator_alloc_particle();
+void allocator_free_particle(int index);
 void allocator_reset();
 void allocator_cleanup();
+Circle *allocator_get_pool();
 
 #endif

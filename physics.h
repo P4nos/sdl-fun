@@ -3,8 +3,8 @@
 
 #include "defs.h"
 
-void handle_object_collisions(Node *node);
-void handle_border_collisions(Node *node);
-void calculate_location(Node *node);
+void handle_object_collisions(int particle_index);
+void handle_border_collisions(Circle *particle);
+void calculate_location(Circle *particle);
 
 #endif

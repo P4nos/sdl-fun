@@ -9,7 +9,7 @@ int allocator_init(int capacity) {
   allocator.allocated_count = 0;
   allocator.next_free = 0;
   
-  allocator.pool = (Node *)malloc(capacity * sizeof(Node));
+  allocator.pool = (Circle *)malloc(capacity * sizeof(Circle));
   if (!allocator.pool) {
     printf("Failed to allocate memory pool\n");
     return -1;
@@ -29,36 +29,32 @@ int allocator_init(int capacity) {
   return 0;
 }
 
-Node *allocator_alloc_node() {
+int allocator_alloc_particle() {
   if (allocator.allocated_count >= allocator.capacity) {
     printf("Allocator pool exhausted\n");
-    return NULL;
+    return -1;
   }
   
   int index = allocator.free_list[allocator.next_free];
   allocator.next_free++;
   allocator.allocated_count++;
   
-  Node *node = &allocator.pool[index];
-  node->next = NULL;
-  
-  return node;
+  return index;
 }
 
-void allocator_free_node(Node *node) {
-  if (!node || allocator.allocated_count == 0) {
-    return;
-  }
-  
-  int index = node - allocator.pool;
-  if (index < 0 || index >= allocator.capacity) {
-    printf("Invalid node pointer in allocator_free_node\n");
+void allocator_free_particle(int index) {
+  if (index < 0 || index >= allocator.capacity || allocator.allocated_count == 0) {
+    printf("Invalid particle index in allocator_free_particle\n");
     return;
   }
   
   allocator.next_free--;
   allocator.free_list[allocator.next_free] = index;
   allocator.allocated_count--;
+}
+
+Circle *allocator_get_pool() {
+  return allocator.pool;
 }
 
 void allocator_reset() {

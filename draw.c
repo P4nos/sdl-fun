@@ -146,16 +146,15 @@ int setup() {
   clear_screen();
   state.renderer = renderer;
 
-  state.head = NULL;
+  state.particles = NULL;
+  state.particle_count = 0;
   return 0;
 }
 
 void render() {
-  Node *temp = state.head;
-  while (temp != NULL) {
-    draw_circle(&temp->object);
-    //    draw_velocity_vector(&temp->object);
-    temp = temp->next;
+  for (int i = 0; i < state.particle_count; i++) {
+    draw_circle(&state.particles[i]);
+    //    draw_velocity_vector(&state.particles[i]);
   }
   draw_borders();
   present();

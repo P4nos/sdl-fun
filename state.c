@@ -4,51 +4,37 @@
 
 extern State state;
 
-// Function to add a node to the end of the list
-void add_node(Circle c) {
-  Node *newNode = allocator_alloc_node();
-  if (!newNode) {
+// Function to add a particle to the array
+void add_particle(Circle c) {
+  int index = allocator_alloc_particle();
+  if (index < 0) {
     printf("Memory allocation failed\n");
     exit(1);
   }
 
-  newNode->object = c;
-  newNode->next = NULL;
-
-  if (state.head == NULL) {
-    state.head = newNode;
-  } else {
-    Node *temp = state.head;
-    // move at the end of the list and append the new node
-    while (temp->next != NULL) {
-      temp = temp->next;
-    }
-    temp->next = newNode;
-  }
+  state.particles[index] = c;
+  state.particle_count++;
 }
 
 void reset_state() {
-  Node *temp;
-  while (state.head != NULL) {
-    temp = state.head;
-    state.head = state.head->next;
-    allocator_free_node(temp);
-  }
+  allocator_reset();
+  state.particle_count = 0;
 }
 
 void update_state() {
-  Node *temp = state.head;
-  while (temp != NULL) {
+  for (int i = 0; i < state.particle_count; i++) {
     // calculate new location for object
-    calculate_location(temp);
+    calculate_location(&state.particles[i]);
     // detect collisions
-    handle_object_collisions(temp);
-    handle_border_collisions(temp);
-    temp = temp->next;
+    handle_object_collisions(i);
+    handle_border_collisions(&state.particles[i]);
   }
 }
 
 void init_state() {
+  state.particles = allocator_get_pool();
+  state.particle_count = 0;
+  
   for (int i = 0; i < NUM_CIRCLES; i++) {
     Circle c = {.ycenter = (float)rand_int_range(0, SCREEN_HEIGHT / 2),
                 .xcenter = (float)rand_int_range(0, SCREEN_WIDTH),
@@ -58,7 +44,8 @@ void init_state() {
                 .m = 1.0,
                 .dx = 0.0,
                 .dy = 0.0,
-                .color = get_rand_color()};
-    add_node(c);
+                .color = get_rand_color(),
+                .id = i};
+    add_particle(c);
   }
 }
