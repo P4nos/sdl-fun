@@ -22,6 +22,37 @@ void reset_state() {
   state.particle_count = 0;
 }
 
+void clear_grid() {
+  #pragma omp parallel for collapse(2)
+  for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_WIDTH; x++) {
+      state.grid[y][x].count = 0;
+    }
+  }
+}
+
+void assign_particles_to_grid() {
+  clear_grid();
+  
+  for (int i = 0; i < state.particle_count; i++) {
+    Circle *p = &state.particles[i];
+    int grid_x = (int)(p->xcenter / GRID_CELL_SIZE);
+    int grid_y = (int)(p->ycenter / GRID_CELL_SIZE);
+    
+    // Clamp to grid bounds
+    if (grid_x < 0) grid_x = 0;
+    if (grid_x >= GRID_WIDTH) grid_x = GRID_WIDTH - 1;
+    if (grid_y < 0) grid_y = 0;
+    if (grid_y >= GRID_HEIGHT) grid_y = GRID_HEIGHT - 1;
+    
+    GridCell *cell = &state.grid[grid_y][grid_x];
+    if (cell->count < MAX_PARTICLES_PER_CELL) {
+      cell->particle_indices[cell->count] = i;
+      cell->count++;
+    }
+  }
+}
+
 void update_state() {
   // Phase 1: Parallel position updates (no race conditions)
   #pragma omp parallel for
@@ -30,10 +61,15 @@ void update_state() {
     handle_border_collisions(&state.particles[i]);
   }
   
-  // Phase 2: Parallel collision detection (potential velocity updates)
-  #pragma omp parallel for
-  for (int i = 0; i < state.particle_count; i++) {
-    handle_object_collisions(i);
+  // Phase 2: Update spatial grid
+  assign_particles_to_grid();
+  
+  // Phase 3: Spatial grid-based collision detection
+  #pragma omp parallel for collapse(2)
+  for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_WIDTH; x++) {
+      handle_grid_cell_collisions(x, y);
+    }
   }
 }
 

@@ -19,6 +19,11 @@
 #define GRAVITY 9.80 // gravity in pixels/s^2
 #define NUM_CIRCLES 1600
 
+#define GRID_CELL_SIZE 8
+#define GRID_WIDTH (SCREEN_WIDTH / GRID_CELL_SIZE)
+#define GRID_HEIGHT (SCREEN_HEIGHT / GRID_CELL_SIZE)
+#define MAX_PARTICLES_PER_CELL 32
+
 typedef struct Circle {
   float xcenter;
   float ycenter;
@@ -33,11 +38,17 @@ typedef struct Circle {
   int id;
 } Circle;
 
+typedef struct GridCell {
+  int particle_indices[MAX_PARTICLES_PER_CELL];
+  int count;
+} GridCell;
+
 typedef struct State {
   SDL_Renderer *renderer;
   SDL_Window *window;
   Circle *particles;
   int particle_count;
+  GridCell grid[GRID_HEIGHT][GRID_WIDTH];
 } State;
 
 #endif
