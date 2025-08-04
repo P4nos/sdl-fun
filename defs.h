@@ -1,3 +1,6 @@
+#ifndef DEFS_H
+#define DEFS_H
+
 #include <SDL2/SDL_render.h>
 #include <stdint.h>
 
@@ -41,3 +44,5 @@ typedef struct State {
   SDL_Window *window;
   Node *head;
 } State;
+
+#endif

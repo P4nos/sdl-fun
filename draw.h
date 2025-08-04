@@ -1,3 +1,6 @@
+#ifndef DRAW_H
+#define DRAW_H
+
 #include <stdint.h>
 
 typedef struct Color {
@@ -12,3 +15,5 @@ void set_draw_color(Color color);
 void cleanup();
 void clear_screen();
 Color get_rand_color();
+
+#endif
