@@ -20,28 +20,19 @@ void set_draw_color(Color color) {
 }
 
 void draw_circle(Circle *c) {
-  int32_t r = c->radius;
-  int32_t x = -r;
-  int32_t y = 0;
-  int32_t err = 2 - 2 * c->radius;
-
   set_draw_color(c->color);
-
-  do {
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter - x),
-                        round(c->ycenter + y));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter - y),
-                        round(c->ycenter - x));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + x),
-                        round(c->ycenter - y));
-    SDL_RenderDrawPoint(state.renderer, round(c->xcenter + y),
-                        round(c->ycenter + x));
-    r = err;
-    if (r <= y)
-      err += ++y * 2 + 1;
-    if (r > x || err > y)
-      err += ++x * 2 + 1;
-  } while (x < 0);
+  
+  int radius = (int)c->radius;
+  int center_x = (int)round(c->xcenter);
+  int center_y = (int)round(c->ycenter);
+  
+  // Draw filled circle by drawing horizontal lines
+  for (int y = -radius; y <= radius; y++) {
+    int width = (int)sqrt(radius * radius - y * y);
+    for (int x = -width; x <= width; x++) {
+      SDL_RenderDrawPoint(state.renderer, center_x + x, center_y + y);
+    }
+  }
 }
 
 Color get_rand_color() {
