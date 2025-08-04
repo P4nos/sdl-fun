@@ -1,6 +1,7 @@
 #include "physics.h"
 #include "util.h"
 #include "allocator.h"
+#include <omp.h>
 
 extern State state;
 
@@ -22,12 +23,17 @@ void reset_state() {
 }
 
 void update_state() {
+  // Phase 1: Parallel position updates (no race conditions)
+  #pragma omp parallel for
   for (int i = 0; i < state.particle_count; i++) {
-    // calculate new location for object
     calculate_location(&state.particles[i]);
-    // detect collisions
-    handle_object_collisions(i);
     handle_border_collisions(&state.particles[i]);
+  }
+  
+  // Phase 2: Parallel collision detection (potential velocity updates)
+  #pragma omp parallel for
+  for (int i = 0; i < state.particle_count; i++) {
+    handle_object_collisions(i);
   }
 }
 

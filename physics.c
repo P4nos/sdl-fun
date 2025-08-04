@@ -57,20 +57,18 @@ void resolve_collision(Circle *c1, Circle *c2) {
 void handle_object_collisions(int particle_index) {
   Circle *particle = &state.particles[particle_index];
   
-  for (int i = 0; i < state.particle_count; i++) {
-    // don't check collisions with itself
-    if (!is_same_particle(particle_index, i)) {
-      Circle *other = &state.particles[i];
-      
-      // check distance between object centers
-      float dy = particle->ycenter - other->ycenter;
-      float dx = particle->xcenter - other->xcenter;
-      float dist = eucledean_dist(dx, dy);
+  // Only check particles with higher indices to avoid duplicate collision processing
+  for (int i = particle_index + 1; i < state.particle_count; i++) {
+    Circle *other = &state.particles[i];
+    
+    // check distance between object centers
+    float dy = particle->ycenter - other->ycenter;
+    float dx = particle->xcenter - other->xcenter;
+    float dist = eucledean_dist(dx, dy);
 
-      // detect collision
-      if (dist <= particle->radius + other->radius) {
-        resolve_collision(particle, other);
-      }
+    // detect collision
+    if (dist <= particle->radius + other->radius) {
+      resolve_collision(particle, other);
     }
   }
 }

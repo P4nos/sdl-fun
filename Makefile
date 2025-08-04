@@ -1,6 +1,6 @@
 # Define the compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -Wall -Wextra -Werror -fopenmp
 CLIBS = -lSDL2 -lm
 
 # Define the executable name

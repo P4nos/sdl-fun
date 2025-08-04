@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include <omp.h>
 
 #include "defs.h"
 #include "state.h"
@@ -12,6 +13,9 @@ State state;
 
 int main() {
   srand(time(NULL));
+  
+  // Set OpenMP thread count (use all available cores)
+  omp_set_num_threads(omp_get_max_threads());
 
   if (setup() > 0) {
     exit(-1);
