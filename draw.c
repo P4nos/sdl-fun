@@ -11,7 +11,8 @@ Color Color_BLUE = {0, 0, 255};
 Color Color_GREEN = {0, 255, 0};
 Color Color_BLACK = {0, 0, 0};
 Color Color_WHITE = {255, 255, 255};
-Color Color_BG = {252, 239, 150};
+Color Color_BG = {25, 25, 35};
+Color Color_CIRCLE = {100, 200, 255};
 
 extern State state;
 
@@ -36,11 +37,7 @@ void draw_circle(Circle *c) {
 }
 
 Color get_rand_color() {
-  return (Color){
-      .r = rand_int_range(0, 255),
-      .b = rand_int_range(0, 255),
-      .g = rand_int_range(0, 255),
-  };
+  return Color_CIRCLE;
 }
 
 void draw_velocity_vector(Circle *c) {

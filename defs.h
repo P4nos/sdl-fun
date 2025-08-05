@@ -18,7 +18,7 @@
 #define BORDER_WIDTH 5
 
 #define GRAVITY 9.80 // gravity in pixels/s^2
-#define NUM_CIRCLES 1600
+#define NUM_CIRCLES 5000
 
 #define GRID_CELL_SIZE 8
 #define GRID_WIDTH (SCREEN_WIDTH / GRID_CELL_SIZE)

@@ -9,6 +9,8 @@ typedef struct Color {
   uint8_t b;
 } Color;
 
+extern Color Color_CIRCLE;
+
 int setup();
 void render();
 void set_draw_color(Color color);
