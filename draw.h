@@ -16,6 +16,5 @@ void render();
 void set_draw_color(Color color);
 void cleanup();
 void clear_screen();
-Color get_rand_color();
 
 #endif

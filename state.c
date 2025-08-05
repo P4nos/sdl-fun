@@ -90,7 +90,7 @@ void init_state() {
                 .m = 1.0,
                 .dx = 0.0,
                 .dy = 0.0,
-                .color = get_rand_color(),
+                .color = Color_CIRCLE,
                 .id = i};
     add_particle(c);
   }

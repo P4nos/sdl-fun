@@ -36,9 +36,6 @@ void draw_circle(Circle *c) {
   }
 }
 
-Color get_rand_color() {
-  return Color_CIRCLE;
-}
 
 void draw_velocity_vector(Circle *c) {
   float vector_len_px = 30.;
