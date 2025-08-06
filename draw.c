@@ -22,11 +22,11 @@ void set_draw_color(Color color) {
 
 void draw_circle(Circle *c) {
   set_draw_color(c->color);
-  
+
   int radius = (int)c->radius;
   int center_x = (int)round(c->xcenter);
   int center_y = (int)round(c->ycenter);
-  
+
   // Draw filled circle by drawing horizontal lines
   for (int y = -radius; y <= radius; y++) {
     int width = (int)sqrt(radius * radius - y * y);
@@ -36,32 +36,46 @@ void draw_circle(Circle *c) {
   }
 }
 
-
 void draw_velocity_vector(Circle *c) {
-  float vector_len_px = 30.;
-  float theta = atanf(c->yvelocity / c->xvelocity);
+  // Skip if velocity is zero to avoid drawing zero-length vectors
+  if (c->xvelocity == 0.0f && c->yvelocity == 0.0f) {
+    return;
+  }
 
-  // "default case, both x and y are positive"
-  float dy = vector_len_px * sinf(theta);
+  float vector_len_px = 30.0f;
+
+  // Use atan2 for proper angle calculation in all quadrants
+  float theta = atan2f(c->yvelocity, c->xvelocity);
+
+  // Calculate vector endpoint
   float dx = vector_len_px * cosf(theta);
+  float dy = vector_len_px * sinf(theta);
 
-  if (c->xvelocity < 0. && c->yvelocity >= 0.) {
-    theta = atanf(c->xvelocity / c->yvelocity);
-    dx = vector_len_px * sinf(theta);
-    dy = vector_len_px * cosf(theta);
-  }
-  if (c->xvelocity < 0. && c->yvelocity <= 0.) {
-    theta = atanf(c->xvelocity / c->yvelocity);
-    dx = vector_len_px * cosf(theta);
-    dy = vector_len_px * sinf(theta);
-  }
-  if (c->xvelocity > 0. && c->yvelocity <= 0.) {
-    dx = vector_len_px * cosf(theta);
-    dy = vector_len_px * sinf(theta);
-  }
+  // Set vector color (different from particles)
+  SDL_SetRenderDrawColor(state.renderer, 255, 255, 0, 255); // Yellow
 
-  SDL_RenderDrawLine(state.renderer, c->xcenter, c->ycenter,
-                     c->xcenter + round(dx), c->ycenter + round(dy));
+  SDL_RenderDrawLine(state.renderer, (int)c->xcenter, (int)c->ycenter,
+                     (int)(c->xcenter + dx), (int)(c->ycenter + dy));
+}
+
+void draw_particle_source() {
+  // Draw source rectangle
+  SDL_Rect source_rect = {(int)state.source.x, (int)state.source.y,
+                          (int)state.source.width, (int)state.source.height};
+
+  if (state.source.is_active) {
+    // Active source: green border with semi-transparent fill
+    SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255); // Green border
+    SDL_RenderDrawRect(state.renderer, &source_rect);
+
+    SDL_SetRenderDrawColor(state.renderer, 0, 255, 0,
+                           64); // Semi-transparent green fill
+    SDL_RenderFillRect(state.renderer, &source_rect);
+  } else {
+    // Inactive source: red border
+    SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255); // Red border
+    SDL_RenderDrawRect(state.renderer, &source_rect);
+  }
 }
 
 void cleanup() {
@@ -208,12 +222,229 @@ void draw_fps() {
   SDL_DestroyTexture(text_texture);
 }
 
+void draw_settings_panel() {
+  if (!state.settings.show_settings || !state.font)
+    return;
+
+  // Calculate panel position (top-right corner, below FPS counter)
+  int panel_x = SCREEN_WIDTH - SETTINGS_PANEL_WIDTH - SETTINGS_PANEL_MARGIN;
+  int panel_y = 50; // Start below FPS counter
+
+  // Draw panel background
+  SDL_Rect panel_rect = {panel_x, panel_y, SETTINGS_PANEL_WIDTH,
+                         SETTINGS_PANEL_HEIGHT};
+  SDL_SetRenderDrawColor(state.renderer, 40, 40, 40, 200);
+  SDL_RenderFillRect(state.renderer, &panel_rect);
+
+  // Draw panel border
+  SDL_SetRenderDrawColor(state.renderer, 255, 255, 255, 255);
+  SDL_RenderDrawRect(state.renderer, &panel_rect);
+
+  SDL_Color white = {255, 255, 255, 255};
+  char text[128];
+  int y_offset = panel_y + 20;
+  int line_height = 25;
+
+  // Title
+  SDL_Surface *title_surface =
+      TTF_RenderText_Solid(state.font, "Settings", white);
+  if (title_surface) {
+    SDL_Texture *title_texture =
+        SDL_CreateTextureFromSurface(state.renderer, title_surface);
+    if (title_texture) {
+      SDL_Rect title_rect = {panel_x + 10, y_offset, title_surface->w,
+                             title_surface->h};
+      SDL_RenderCopy(state.renderer, title_texture, NULL, &title_rect);
+      SDL_DestroyTexture(title_texture);
+    }
+    SDL_FreeSurface(title_surface);
+  }
+  y_offset += line_height * 2;
+
+  // Gravity setting
+  snprintf(text, sizeof(text), "Gravity: %.2f", state.settings.gravity);
+  SDL_Surface *gravity_surface = TTF_RenderText_Solid(state.font, text, white);
+  if (gravity_surface) {
+    SDL_Texture *gravity_texture =
+        SDL_CreateTextureFromSurface(state.renderer, gravity_surface);
+    if (gravity_texture) {
+      SDL_Rect gravity_rect = {panel_x + 10, y_offset, gravity_surface->w,
+                               gravity_surface->h};
+      SDL_RenderCopy(state.renderer, gravity_texture, NULL, &gravity_rect);
+      SDL_DestroyTexture(gravity_texture);
+    }
+    SDL_FreeSurface(gravity_surface);
+  }
+  y_offset += line_height;
+
+  // Particle count setting
+  snprintf(text, sizeof(text), "Particles: %d", state.settings.num_particles);
+  SDL_Surface *particles_surface =
+      TTF_RenderText_Solid(state.font, text, white);
+  if (particles_surface) {
+    SDL_Texture *particles_texture =
+        SDL_CreateTextureFromSurface(state.renderer, particles_surface);
+    if (particles_texture) {
+      SDL_Rect particles_rect = {panel_x + 10, y_offset, particles_surface->w,
+                                 particles_surface->h};
+      SDL_RenderCopy(state.renderer, particles_texture, NULL, &particles_rect);
+      SDL_DestroyTexture(particles_texture);
+    }
+    SDL_FreeSurface(particles_surface);
+  }
+  y_offset += line_height;
+
+  // Velocity range setting
+  snprintf(text, sizeof(text), "Velocity: %.0f to %.0f",
+           state.settings.initial_velocity_min,
+           state.settings.initial_velocity_max);
+  SDL_Surface *velocity_surface = TTF_RenderText_Solid(state.font, text, white);
+  if (velocity_surface) {
+    SDL_Texture *velocity_texture =
+        SDL_CreateTextureFromSurface(state.renderer, velocity_surface);
+    if (velocity_texture) {
+      SDL_Rect velocity_rect = {panel_x + 10, y_offset, velocity_surface->w,
+                                velocity_surface->h};
+      SDL_RenderCopy(state.renderer, velocity_texture, NULL, &velocity_rect);
+      SDL_DestroyTexture(velocity_texture);
+    }
+    SDL_FreeSurface(velocity_surface);
+  }
+  y_offset += line_height * 2;
+
+  // Simulation status
+  const char *status_text = state.settings.is_paused ? "PAUSED" : "RUNNING";
+  snprintf(text, sizeof(text), "Status: %s", status_text);
+  SDL_Surface *status_surface = TTF_RenderText_Solid(state.font, text, white);
+  if (status_surface) {
+    SDL_Texture *status_texture =
+        SDL_CreateTextureFromSurface(state.renderer, status_surface);
+    if (status_texture) {
+      SDL_Rect status_rect = {panel_x + 10, y_offset, status_surface->w,
+                              status_surface->h};
+      SDL_RenderCopy(state.renderer, status_texture, NULL, &status_rect);
+      SDL_DestroyTexture(status_texture);
+    }
+    SDL_FreeSurface(status_surface);
+  }
+  y_offset += line_height * 2;
+
+  // Control instructions
+  SDL_Surface *controls_surface =
+      TTF_RenderText_Solid(state.font, "Controls:", white);
+  if (controls_surface) {
+    SDL_Texture *controls_texture =
+        SDL_CreateTextureFromSurface(state.renderer, controls_surface);
+    if (controls_texture) {
+      SDL_Rect controls_rect = {panel_x + 10, y_offset, controls_surface->w,
+                                controls_surface->h};
+      SDL_RenderCopy(state.renderer, controls_texture, NULL, &controls_rect);
+      SDL_DestroyTexture(controls_texture);
+    }
+    SDL_FreeSurface(controls_surface);
+  }
+  y_offset += line_height;
+
+  SDL_Surface *space_surface =
+      TTF_RenderText_Solid(state.font, "SPACE - Pause/Resume", white);
+  if (space_surface) {
+    SDL_Texture *space_texture =
+        SDL_CreateTextureFromSurface(state.renderer, space_surface);
+    if (space_texture) {
+      SDL_Rect space_rect = {panel_x + 10, y_offset, space_surface->w,
+                             space_surface->h};
+      SDL_RenderCopy(state.renderer, space_texture, NULL, &space_rect);
+      SDL_DestroyTexture(space_texture);
+    }
+    SDL_FreeSurface(space_surface);
+  }
+  y_offset += line_height;
+
+  SDL_Surface *step_surface =
+      TTF_RenderText_Solid(state.font, "J - Step simulation", white);
+  if (step_surface) {
+    SDL_Texture *step_texture =
+        SDL_CreateTextureFromSurface(state.renderer, step_surface);
+    if (step_texture) {
+      SDL_Rect step_rect = {panel_x + 10, y_offset, step_surface->w,
+                            step_surface->h};
+      SDL_RenderCopy(state.renderer, step_texture, NULL, &step_rect);
+      SDL_DestroyTexture(step_texture);
+    }
+    SDL_FreeSurface(step_surface);
+  }
+  y_offset += line_height;
+
+  SDL_Surface *reset_surface =
+      TTF_RenderText_Solid(state.font, "R - Reset simulation", white);
+  if (reset_surface) {
+    SDL_Texture *reset_texture =
+        SDL_CreateTextureFromSurface(state.renderer, reset_surface);
+    if (reset_texture) {
+      SDL_Rect reset_rect = {panel_x + 10, y_offset, reset_surface->w,
+                             reset_surface->h};
+      SDL_RenderCopy(state.renderer, reset_texture, NULL, &reset_rect);
+      SDL_DestroyTexture(reset_texture);
+    }
+    SDL_FreeSurface(reset_surface);
+  }
+  y_offset += line_height;
+
+  SDL_Surface *vectors_surface =
+      TTF_RenderText_Solid(state.font, "V - Toggle vectors", white);
+  if (vectors_surface) {
+    SDL_Texture *vectors_texture =
+        SDL_CreateTextureFromSurface(state.renderer, vectors_surface);
+    if (vectors_texture) {
+      SDL_Rect vectors_rect = {panel_x + 10, y_offset, vectors_surface->w,
+                               vectors_surface->h};
+      SDL_RenderCopy(state.renderer, vectors_texture, NULL, &vectors_rect);
+      SDL_DestroyTexture(vectors_texture);
+    }
+    SDL_FreeSurface(vectors_surface);
+  }
+  y_offset += line_height;
+
+  SDL_Surface *settings_surface =
+      TTF_RenderText_Solid(state.font, "S - Toggle settings", white);
+  if (settings_surface) {
+    SDL_Texture *settings_texture =
+        SDL_CreateTextureFromSurface(state.renderer, settings_surface);
+    if (settings_texture) {
+      SDL_Rect settings_rect = {panel_x + 10, y_offset, settings_surface->w,
+                                settings_surface->h};
+      SDL_RenderCopy(state.renderer, settings_texture, NULL, &settings_rect);
+      SDL_DestroyTexture(settings_texture);
+    }
+    SDL_FreeSurface(settings_surface);
+  }
+  y_offset += line_height;
+
+  SDL_Surface *quit_surface =
+      TTF_RenderText_Solid(state.font, "Q - Quit", white);
+  if (quit_surface) {
+    SDL_Texture *quit_texture =
+        SDL_CreateTextureFromSurface(state.renderer, quit_surface);
+    if (quit_texture) {
+      SDL_Rect quit_rect = {panel_x + 10, y_offset, quit_surface->w,
+                            quit_surface->h};
+      SDL_RenderCopy(state.renderer, quit_texture, NULL, &quit_rect);
+      SDL_DestroyTexture(quit_texture);
+    }
+    SDL_FreeSurface(quit_surface);
+  }
+}
+
 void render() {
   for (int i = 0; i < state.particle_count; i++) {
     draw_circle(&state.particles[i]);
-    //    draw_velocity_vector(&state.particles[i]);
+    if (state.settings.show_velocity_vectors) {
+      draw_velocity_vector(&state.particles[i]);
+    }
   }
   draw_borders();
+  draw_particle_source();
   draw_fps();
+  draw_settings_panel();
   present();
 }

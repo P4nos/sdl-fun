@@ -16,5 +16,7 @@ void render();
 void set_draw_color(Color color);
 void cleanup();
 void clear_screen();
+void draw_settings_panel();
+void draw_particle_source();
 
 #endif
