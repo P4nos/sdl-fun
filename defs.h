@@ -34,7 +34,7 @@
 #define SOURCE_SIZE 30
 #define SOURCE_FLOW_RATE 200.0f
 #define SOURCE_VELOCITY_MAGNITUDE 40.0f
-
+#define PARTICLE_RADIUS 2.0f
 #define USE_RANDOM_COLORS 1 // Set to 1 for random colors, 0 for default color
 
 #define SETTINGS_PANEL_WIDTH 250
