@@ -133,14 +133,13 @@ void calculate_location(Circle *particle) {
   float dt = (time - particle->lastupdated) / 1000.0f;
 
   // Apply gravity to y-velocity
-  particle->yvelocity -= GRAVITY * dt;
+  particle->yvelocity += GRAVITY * dt;
 
   particle->dy += particle->yvelocity * dt;
   particle->dx += particle->xvelocity * dt;
 
-  // need to multiply with -1 to reverse the direction of movement
-  particle->ycenter += (-1.0) * particle->yvelocity * dt;
-  particle->xcenter += (-1.0) * particle->xvelocity * dt;
+  particle->ycenter += particle->yvelocity * dt;
+  particle->xcenter += particle->xvelocity * dt;
 
   particle->lastupdated = time;
 }

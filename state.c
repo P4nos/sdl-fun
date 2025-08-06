@@ -1,4 +1,5 @@
 #include "allocator.h"
+#include "defs.h"
 #include "physics.h"
 #include "util.h"
 #include <SDL2/SDL_timer.h>
@@ -84,28 +85,105 @@ void init_state() {
   state.fps = 0.0f;
   state.last_fps_update = SDL_GetTicks();
   state.frame_count = 0;
-  
+
   // Initialize settings
   state.settings.gravity = GRAVITY;
-  state.settings.num_particles = NUM_CIRCLES;
+  state.settings.num_particles = MAX_SOURCE_PARTICLES;
   state.settings.initial_velocity_min = INITIAL_VELOCITY_MIN;
   state.settings.initial_velocity_max = INITIAL_VELOCITY_MAX;
-  state.settings.show_settings = 0;
+  state.settings.show_settings = 1;
   state.settings.is_paused = 0;
   state.settings.show_velocity_vectors = 0;
 
-  for (int i = 0; i < NUM_CIRCLES; i++) {
-    Circle c = {.ycenter = (float)rand_int_range(INITIAL_Y_MIN, INITIAL_Y_MAX),
-                .xcenter = (float)rand_int_range(INITIAL_X_MIN, INITIAL_X_MAX),
-                .radius = 2.0,
-                .yvelocity = (float)rand_int_range(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX),
-                .xvelocity = (float)rand_int_range(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX),
-                .m = 1.0,
-                .dx = 0.0,
-                .dy = 0.0,
-                .color = Color_CIRCLE,
-                .id = i};
-    add_particle(c);
+  // Initialize particle source (touching left border)
+  state.source.x = BORDER_WIDTH;
+  state.source.y = 100;
+  state.source.width = 20;
+  state.source.height = 20;
+  state.source.flow_rate = 5.0f;           // 5 particles per second
+  state.source.velocity_magnitude = 30.0f; // Initial particle speed
+  state.source.last_spawn_time = SDL_GetTicks();
+  state.source.is_active = 1;
+  state.source.particles_spawned = 0;
+  state.source.emitter_side = EMITTER_RIGHT; // Emit from right side
+
+  // No initial particles - let the source generate them
+}
+
+void update_particle_source() {
+  if (!state.source.is_active)
+    return;
+
+  // Stop generating if we've reached the maximum source particles
+  if (state.source.particles_spawned >= MAX_SOURCE_PARTICLES) {
+    state.source.is_active = 0; // Deactivate source when limit reached
+    return;
+  }
+
+  Uint32 current_time = SDL_GetTicks();
+  float dt = (current_time - state.source.last_spawn_time) / 1000.0f;
+  float spawn_interval = 1.0f / state.source.flow_rate;
+
+  // Check if it's time to spawn a new particle
+  if (dt >= spawn_interval && state.particle_count < MAX_SOURCE_PARTICLES) {
+    float spawn_x, spawn_y;
+    float velocity_x, velocity_y;
+
+    // Calculate spawn position and velocity based on emitter side
+    switch (state.source.emitter_side) {
+    case EMITTER_LEFT:
+      spawn_x = state.source.x;
+      spawn_y =
+          state.source.y + (float)rand_int_range(0, (int)state.source.height);
+      velocity_x = -state.source.velocity_magnitude; // Leftward (negative)
+      velocity_y = 0.0f;
+      break;
+    case EMITTER_RIGHT:
+      spawn_x = state.source.x + state.source.width;
+      spawn_y =
+          state.source.y + (float)rand_int_range(0, (int)state.source.height);
+      velocity_x = state.source.velocity_magnitude; // Rightward (positive)
+      velocity_y = 0.0f;
+      break;
+    case EMITTER_TOP:
+      spawn_x =
+          state.source.x + (float)rand_int_range(0, (int)state.source.width);
+      spawn_y = state.source.y;
+      velocity_x = 0.0f;
+      velocity_y = -state.source.velocity_magnitude; // Upward (negative)
+      break;
+    case EMITTER_BOTTOM:
+      spawn_x =
+          state.source.x + (float)rand_int_range(0, (int)state.source.width);
+      spawn_y = state.source.y + state.source.height;
+      velocity_x = 0.0f;
+      velocity_y = state.source.velocity_magnitude; // Downward (positive)
+      break;
+    default:
+      // Default to right emitter
+      spawn_x = state.source.x + state.source.width;
+      spawn_y =
+          state.source.y + (float)rand_int_range(0, (int)state.source.height);
+      velocity_x = state.source.velocity_magnitude; // Rightward (positive)
+      velocity_y = 0.0f;
+      break;
+    }
+
+    Circle new_particle = {.xcenter = spawn_x,
+                           .ycenter = spawn_y,
+                           .radius = 2.0f,
+                           .xvelocity = velocity_x,
+                           .yvelocity = velocity_y,
+                           .m = 1.0f,
+                           .dx = 0.0f,
+                           .dy = 0.0f,
+                           .color = Color_CIRCLE,
+                           .id = state.particle_count,
+                           .lastupdated = current_time};
+
+    add_particle(new_particle);
+    state.source.particles_spawned++;
+    state.source.last_spawn_time = current_time;
   }
 }
 
