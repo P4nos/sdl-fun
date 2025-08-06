@@ -26,7 +26,16 @@
 #define INITIAL_VELOCITY_MIN 0
 #define INITIAL_VELOCITY_MAX 5
 
-#define MAX_SOURCE_PARTICLES 200
+#define MAX_SOURCE_PARTICLES 20000
+
+// Particle Source Constants
+#define SOURCE_X BORDER_WIDTH
+#define SOURCE_Y 100
+#define SOURCE_SIZE 30
+#define SOURCE_FLOW_RATE 200.0f
+#define SOURCE_VELOCITY_MAGNITUDE 40.0f
+#define PARTICLE_RADIUS 2.0f
+#define USE_RANDOM_COLORS 1 // Set to 1 for random colors, 0 for default color
 
 #define SETTINGS_PANEL_WIDTH 250
 #define SETTINGS_PANEL_HEIGHT 450
@@ -46,8 +55,9 @@ typedef struct Circle {
   float yvelocity;
   float xvelocity;
   float lastupdated;
-  float m;           // mass
-  float cor; // coefficient of restitution (0.0 = no bounce, 1.0 = perfect bounce)
+  float m; // mass
+  float
+      cor; // coefficient of restitution (0.0 = no bounce, 1.0 = perfect bounce)
   Color color;
   int id;
 } Circle;
@@ -85,6 +95,25 @@ typedef struct Settings {
   int show_velocity_vectors;
 } Settings;
 
+typedef struct UICache {
+  // Static UI textures (created once)
+  SDL_Texture *controls_label;
+  SDL_Texture *space_help;
+  SDL_Texture *step_help;
+  SDL_Texture *reset_help;
+  SDL_Texture *vectors_help;
+  SDL_Texture *settings_help;
+  SDL_Texture *quit_help;
+  
+  // Dynamic UI textures with cached values
+  SDL_Texture *fps_texture;
+  float last_fps;
+  SDL_Texture *particles_texture;
+  int last_particle_count;
+  SDL_Texture *status_texture;
+  int last_paused_state;
+} UICache;
+
 typedef struct State {
   SDL_Renderer *renderer;
   SDL_Window *window;
@@ -97,6 +126,13 @@ typedef struct State {
   TTF_Font *font;
   Settings settings;
   ParticleSource source;
+  SDL_Texture *circle_texture;
+  int circle_texture_size;
+  SDL_Vertex *vertices;
+  int *indices;
+  int max_vertices;
+  int max_indices;
+  UICache ui_cache;
 } State;
 
 #endif
