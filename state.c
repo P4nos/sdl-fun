@@ -169,14 +169,15 @@ void update_particle_source() {
 
     Circle new_particle = {.xcenter = spawn_x,
                            .ycenter = spawn_y,
-                           .radius = 2.0f,
+                           .radius = PARTICLE_RADIUS,
                            .xvelocity = velocity_x,
                            .yvelocity = velocity_y,
                            .m = 20.0f,
                            .cor = 0.80f,
                            .dx = 0.0f,
                            .dy = 0.0f,
-                           .color = USE_RANDOM_COLORS ? generate_random_color() : Color_CIRCLE,
+                           .color = USE_RANDOM_COLORS ? generate_random_color()
+                                                      : Color_CIRCLE,
                            .id = state.particle_count,
                            .lastupdated = current_time};
 

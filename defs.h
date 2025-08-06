@@ -95,6 +95,25 @@ typedef struct Settings {
   int show_velocity_vectors;
 } Settings;
 
+typedef struct UICache {
+  // Static UI textures (created once)
+  SDL_Texture *controls_label;
+  SDL_Texture *space_help;
+  SDL_Texture *step_help;
+  SDL_Texture *reset_help;
+  SDL_Texture *vectors_help;
+  SDL_Texture *settings_help;
+  SDL_Texture *quit_help;
+  
+  // Dynamic UI textures with cached values
+  SDL_Texture *fps_texture;
+  float last_fps;
+  SDL_Texture *particles_texture;
+  int last_particle_count;
+  SDL_Texture *status_texture;
+  int last_paused_state;
+} UICache;
+
 typedef struct State {
   SDL_Renderer *renderer;
   SDL_Window *window;
@@ -113,6 +132,7 @@ typedef struct State {
   int *indices;
   int max_vertices;
   int max_indices;
+  UICache ui_cache;
 } State;
 
 #endif
