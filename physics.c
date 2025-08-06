@@ -5,10 +5,6 @@
 
 extern State state;
 
-int is_same_particle(int indexa, int indexb) {
-  return indexa == indexb ? 1 : 0;
-}
-
 void resolve_collision(Circle *c1, Circle *c2) {
   // Calculate distance and separation first
   float dx = c1->xcenter - c2->xcenter;

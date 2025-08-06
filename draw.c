@@ -1,5 +1,4 @@
 #include "defs.h"
-#include "util.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
@@ -20,20 +19,64 @@ void set_draw_color(Color color) {
   SDL_SetRenderDrawColor(state.renderer, color.r, color.g, color.b, 255);
 }
 
+SDL_Texture *create_circle_texture(int radius) {
+  int diameter = radius * 2;
+
+  // Create a texture with per-pixel alpha
+  SDL_Texture *texture =
+      SDL_CreateTexture(state.renderer, SDL_PIXELFORMAT_RGBA8888,
+                        SDL_TEXTUREACCESS_TARGET, diameter, diameter);
+  if (!texture) {
+    return NULL;
+  }
+
+  // Set blend mode for alpha blending
+  SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+
+  // Set the texture as render target
+  SDL_Texture *original_target = SDL_GetRenderTarget(state.renderer);
+  SDL_SetRenderTarget(state.renderer, texture);
+
+  // Clear with transparent background
+  SDL_SetRenderDrawColor(state.renderer, 0, 0, 0, 0);
+  SDL_RenderClear(state.renderer);
+
+  // Draw white circle (color will be modulated when rendering)
+  SDL_SetRenderDrawColor(state.renderer, 255, 255, 255, 255);
+
+  // Draw filled circle by drawing horizontal lines
+  for (int y = -radius; y < radius; y++) {
+    int width = (int)sqrt(radius * radius - y * y);
+    for (int x = -width; x < width; x++) {
+      SDL_RenderDrawPoint(state.renderer, radius + x, radius + y);
+    }
+  }
+
+  // Restore original render target
+  SDL_SetRenderTarget(state.renderer, original_target);
+
+  return texture;
+}
+
 void draw_circle(Circle *c) {
-  set_draw_color(c->color);
+  if (!state.circle_texture) {
+    return;
+  }
 
   int radius = (int)c->radius;
   int center_x = (int)round(c->xcenter);
   int center_y = (int)round(c->ycenter);
 
-  // Draw filled circle by drawing horizontal lines
-  for (int y = -radius; y <= radius; y++) {
-    int width = (int)sqrt(radius * radius - y * y);
-    for (int x = -width; x <= width; x++) {
-      SDL_RenderDrawPoint(state.renderer, center_x + x, center_y + y);
-    }
-  }
+  // Set color modulation for the texture
+  SDL_SetTextureColorMod(state.circle_texture, c->color.r, c->color.g,
+                         c->color.b);
+
+  // Calculate destination rectangle
+  SDL_Rect dest_rect = {center_x - radius, center_y - radius, radius * 2,
+                        radius * 2};
+
+  // Render the texture
+  SDL_RenderCopy(state.renderer, state.circle_texture, NULL, &dest_rect);
 }
 
 void draw_velocity_vector(Circle *c) {
@@ -79,6 +122,12 @@ void draw_particle_source() {
 }
 
 void cleanup() {
+  // Destroy circle texture
+  if (state.circle_texture) {
+    SDL_DestroyTexture(state.circle_texture);
+    state.circle_texture = NULL;
+  }
+
   // Close font
   if (state.font) {
     TTF_CloseFont(state.font);
@@ -178,6 +227,15 @@ int setup() {
 
   state.particles = NULL;
   state.particle_count = 0;
+
+  // Create circle texture (using average particle radius)
+  int default_radius = 2; // Matches typical particle size
+  state.circle_texture = create_circle_texture(default_radius);
+  state.circle_texture_size = default_radius * 2;
+  if (!state.circle_texture) {
+    printf("Warning: Could not create circle texture\n");
+  }
+
   return 0;
 }
 

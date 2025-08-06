@@ -107,6 +107,8 @@ typedef struct State {
   TTF_Font *font;
   Settings settings;
   ParticleSource source;
+  SDL_Texture *circle_texture;
+  int circle_texture_size;
 } State;
 
 #endif
