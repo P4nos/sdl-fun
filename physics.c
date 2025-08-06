@@ -56,48 +56,48 @@ void resolve_collision(Circle *c1, Circle *c2) {
 
 void handle_grid_cell_collisions(int grid_x, int grid_y) {
   GridCell *cell = &state.grid[grid_y][grid_x];
-  
+
   // Check collisions within current cell
   for (int i = 0; i < cell->count; i++) {
     for (int j = i + 1; j < cell->count; j++) {
       int idx1 = cell->particle_indices[i];
       int idx2 = cell->particle_indices[j];
-      
+
       Circle *p1 = &state.particles[idx1];
       Circle *p2 = &state.particles[idx2];
-      
+
       float dx = p1->xcenter - p2->xcenter;
       float dy = p1->ycenter - p2->ycenter;
       float dist = eucledean_dist(dx, dy);
-      
+
       if (dist <= p1->radius + p2->radius) {
         resolve_collision(p1, p2);
       }
     }
   }
-  
+
   // Check collisions with adjacent cells (right and down to avoid duplicates)
   int adjacent_cells[2][2] = {{1, 0}, {0, 1}};
-  
+
   for (int adj = 0; adj < 2; adj++) {
     int adj_x = grid_x + adjacent_cells[adj][0];
     int adj_y = grid_y + adjacent_cells[adj][1];
-    
+
     if (adj_x < GRID_WIDTH && adj_y < GRID_HEIGHT) {
       GridCell *adj_cell = &state.grid[adj_y][adj_x];
-      
+
       for (int i = 0; i < cell->count; i++) {
         for (int j = 0; j < adj_cell->count; j++) {
           int idx1 = cell->particle_indices[i];
           int idx2 = adj_cell->particle_indices[j];
-          
+
           Circle *p1 = &state.particles[idx1];
           Circle *p2 = &state.particles[idx2];
-          
+
           float dx = p1->xcenter - p2->xcenter;
           float dy = p1->ycenter - p2->ycenter;
           float dist = eucledean_dist(dx, dy);
-          
+
           if (dist <= p1->radius + p2->radius) {
             resolve_collision(p1, p2);
           }
@@ -131,6 +131,10 @@ void handle_border_collisions(Circle *particle) {
 void calculate_location(Circle *particle) {
   Uint32 time = SDL_GetTicks();
   float dt = (time - particle->lastupdated) / 1000.0f;
+
+  // Apply gravity to y-velocity
+  particle->yvelocity -= GRAVITY * dt;
+
   particle->dy += particle->yvelocity * dt;
   particle->dx += particle->xvelocity * dt;
 
