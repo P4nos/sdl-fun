@@ -18,6 +18,7 @@
 #define BORDER_WIDTH 5
 
 #define GRAVITY 9.80 // gravity in pixels/s^2
+#define PHYSICS_SUBSTEPS 8
 
 #define INITIAL_Y_MIN 0
 #define INITIAL_Y_MAX (SCREEN_HEIGHT / 2)
@@ -26,14 +27,14 @@
 #define INITIAL_VELOCITY_MIN 0
 #define INITIAL_VELOCITY_MAX 5
 
-#define MAX_SOURCE_PARTICLES 20000
+#define MAX_SOURCE_PARTICLES 1000
 
 // Particle Source Constants
 #define SOURCE_X BORDER_WIDTH
 #define SOURCE_Y 100
 #define SOURCE_SIZE 30
-#define SOURCE_FLOW_RATE 200.0f
-#define SOURCE_VELOCITY_MAGNITUDE 40.0f
+#define SOURCE_FLOW_RATE 100.0f
+#define SOURCE_VELOCITY_MAGNITUDE 80.0f
 #define PARTICLE_RADIUS 2.0f
 #define USE_RANDOM_COLORS 1 // Set to 1 for random colors, 0 for default color
 
@@ -104,7 +105,7 @@ typedef struct UICache {
   SDL_Texture *vectors_help;
   SDL_Texture *settings_help;
   SDL_Texture *quit_help;
-  
+
   // Dynamic UI textures with cached values
   SDL_Texture *fps_texture;
   float last_fps;

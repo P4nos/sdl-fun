@@ -60,22 +60,50 @@ void assign_particles_to_grid() {
 }
 
 void update_state() {
-// Phase 1: Parallel position updates (no race conditions)
-#pragma omp parallel for
-  for (int i = 0; i < state.particle_count; i++) {
-    calculate_location(&state.particles[i]);
-    handle_border_collisions(&state.particles[i]);
+  // Calculate frame dt once for all particles
+  Uint32 current_time = SDL_GetTicks();
+  float frame_dt = 0.0f;
+
+  // Find the minimum dt among all particles to use as frame dt
+  if (state.particle_count > 0) {
+    frame_dt = (current_time - state.particles[0].lastupdated) / 1000.0f;
+    for (int i = 1; i < state.particle_count; i++) {
+      float particle_dt =
+          (current_time - state.particles[i].lastupdated) / 1000.0f;
+      if (particle_dt < frame_dt) {
+        frame_dt = particle_dt;
+      }
+    }
   }
 
-  // Phase 2: Update spatial grid
-  assign_particles_to_grid();
+  // Sub-stepping loop
+  int substeps = PHYSICS_SUBSTEPS;
+  float sub_dt = frame_dt / (float)substeps;
 
-// Phase 3: Spatial grid-based collision detection
-#pragma omp parallel for collapse(2)
-  for (int y = 0; y < GRID_HEIGHT; y++) {
-    for (int x = 0; x < GRID_WIDTH; x++) {
-      handle_grid_cell_collisions(x, y);
+  for (int step = 0; step < substeps; step++) {
+    // Phase 1: Parallel position updates (no race conditions)
+#pragma omp parallel for
+    for (int i = 0; i < state.particle_count; i++) {
+      calculate_location_dt(&state.particles[i], sub_dt);
+      handle_border_collisions(&state.particles[i]);
     }
+
+    // Phase 2: Update spatial grid
+    assign_particles_to_grid();
+
+    // Phase 3: Spatial grid-based collision detection
+#pragma omp parallel for collapse(2)
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+      for (int x = 0; x < GRID_WIDTH; x++) {
+        handle_grid_cell_collisions(x, y);
+      }
+    }
+  }
+
+  // Update all particle timestamps after sub-stepping
+#pragma omp parallel for
+  for (int i = 0; i < state.particle_count; i++) {
+    state.particles[i].lastupdated = current_time;
   }
 }
 

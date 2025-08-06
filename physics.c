@@ -5,7 +5,6 @@
 
 extern State state;
 
-
 void resolve_collision(Circle *c1, Circle *c2) {
   // Calculate distance and separation first
   float dx = c1->xcenter - c2->xcenter;
@@ -155,10 +154,7 @@ void handle_border_collisions(Circle *particle) {
   }
 }
 
-void calculate_location(Circle *particle) {
-  Uint32 time = SDL_GetTicks();
-  float dt = (time - particle->lastupdated) / 1000.0f;
-
+void calculate_location_dt(Circle *particle, float dt) {
   // Apply gravity to y-velocity
   particle->yvelocity += GRAVITY * dt;
 
@@ -167,6 +163,4 @@ void calculate_location(Circle *particle) {
 
   particle->ycenter += particle->yvelocity * dt;
   particle->xcenter += particle->xvelocity * dt;
-
-  particle->lastupdated = time;
 }
