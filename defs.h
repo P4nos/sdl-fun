@@ -1,4 +1,8 @@
+#ifndef DEFS_H
+#define DEFS_H
+
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdint.h>
 
 #include "draw.h"
@@ -14,7 +18,12 @@
 #define BORDER_WIDTH 5
 
 #define GRAVITY 9.80 // gravity in pixels/s^2
-#define NUM_CIRCLES 160
+#define NUM_CIRCLES 5000
+
+#define GRID_CELL_SIZE 8
+#define GRID_WIDTH (SCREEN_WIDTH / GRID_CELL_SIZE)
+#define GRID_HEIGHT (SCREEN_HEIGHT / GRID_CELL_SIZE)
+#define MAX_PARTICLES_PER_CELL 32
 
 typedef struct Circle {
   float xcenter;
@@ -30,14 +39,21 @@ typedef struct Circle {
   int id;
 } Circle;
 
-// Define the structure for a linked list node
-typedef struct Node {
-  Circle object;
-  struct Node *next;
-} Node;
+typedef struct GridCell {
+  int particle_indices[MAX_PARTICLES_PER_CELL];
+  int count;
+} GridCell;
 
 typedef struct State {
   SDL_Renderer *renderer;
   SDL_Window *window;
-  Node *head;
+  Circle *particles;
+  int particle_count;
+  GridCell grid[GRID_HEIGHT][GRID_WIDTH];
+  float fps;
+  Uint32 last_fps_update;
+  int frame_count;
+  TTF_Font *font;
 } State;
+
+#endif

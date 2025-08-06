@@ -1,5 +1,10 @@
+#ifndef PHYSICS_H
+#define PHYSICS_H
+
 #include "defs.h"
 
-void handle_object_collisions(Node *node);
-void handle_border_collisions(Node *node);
-void calculate_location(Node *node);
+void handle_grid_cell_collisions(int grid_x, int grid_y);
+void handle_border_collisions(Circle *particle);
+void calculate_location(Circle *particle);
+
+#endif

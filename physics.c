@@ -4,11 +4,8 @@
 
 extern State state;
 
-int is_same_node(Node *nodea, Node *nodeb) {
-  return (nodea->object.xcenter == nodeb->object.xcenter &&
-          nodea->object.ycenter == nodeb->object.ycenter)
-             ? 1
-             : 0;
+int is_same_particle(int indexa, int indexb) {
+  return indexa == indexb ? 1 : 0;
 }
 
 void resolve_collision(Circle *c1, Circle *c2) {
@@ -57,33 +54,65 @@ void resolve_collision(Circle *c1, Circle *c2) {
   c2->xvelocity = v2_prime_vec.x;
 }
 
-void handle_object_collisions(Node *node) {
-  Node *temp = state.head;
-
-  while (temp != NULL) {
-    // dont't check collisions with itself
-    if (!is_same_node(node, temp)) {
-
-      // check distance between object centers
-      float dy = node->object.ycenter - temp->object.ycenter;
-      float dx = node->object.xcenter - temp->object.xcenter;
+void handle_grid_cell_collisions(int grid_x, int grid_y) {
+  GridCell *cell = &state.grid[grid_y][grid_x];
+  
+  // Check collisions within current cell
+  for (int i = 0; i < cell->count; i++) {
+    for (int j = i + 1; j < cell->count; j++) {
+      int idx1 = cell->particle_indices[i];
+      int idx2 = cell->particle_indices[j];
+      
+      Circle *p1 = &state.particles[idx1];
+      Circle *p2 = &state.particles[idx2];
+      
+      float dx = p1->xcenter - p2->xcenter;
+      float dy = p1->ycenter - p2->ycenter;
       float dist = eucledean_dist(dx, dy);
-
-      // detect collision
-      if (dist <= node->object.radius + temp->object.radius) {
-        resolve_collision(&node->object, &temp->object);
+      
+      if (dist <= p1->radius + p2->radius) {
+        resolve_collision(p1, p2);
       }
     }
-    temp = temp->next;
+  }
+  
+  // Check collisions with adjacent cells (right and down to avoid duplicates)
+  int adjacent_cells[2][2] = {{1, 0}, {0, 1}};
+  
+  for (int adj = 0; adj < 2; adj++) {
+    int adj_x = grid_x + adjacent_cells[adj][0];
+    int adj_y = grid_y + adjacent_cells[adj][1];
+    
+    if (adj_x < GRID_WIDTH && adj_y < GRID_HEIGHT) {
+      GridCell *adj_cell = &state.grid[adj_y][adj_x];
+      
+      for (int i = 0; i < cell->count; i++) {
+        for (int j = 0; j < adj_cell->count; j++) {
+          int idx1 = cell->particle_indices[i];
+          int idx2 = adj_cell->particle_indices[j];
+          
+          Circle *p1 = &state.particles[idx1];
+          Circle *p2 = &state.particles[idx2];
+          
+          float dx = p1->xcenter - p2->xcenter;
+          float dy = p1->ycenter - p2->ycenter;
+          float dist = eucledean_dist(dx, dy);
+          
+          if (dist <= p1->radius + p2->radius) {
+            resolve_collision(p1, p2);
+          }
+        }
+      }
+    }
   }
 }
 
-void handle_border_collisions(Node *node) {
+void handle_border_collisions(Circle *particle) {
   // object sides
-  float left_point = node->object.xcenter - node->object.radius;
-  float right_point = node->object.xcenter + node->object.radius;
-  float top_point = node->object.ycenter - node->object.radius;
-  float bottom_point = node->object.ycenter + node->object.radius;
+  float left_point = particle->xcenter - particle->radius;
+  float right_point = particle->xcenter + particle->radius;
+  float top_point = particle->ycenter - particle->radius;
+  float bottom_point = particle->ycenter + particle->radius;
 
   // walls
   float left_wall = BORDER_WIDTH;
@@ -92,22 +121,22 @@ void handle_border_collisions(Node *node) {
   float bottom_wall = SCREEN_HEIGHT - BORDER_WIDTH;
 
   if (left_point < left_wall || right_point > right_wall) {
-    node->object.xvelocity *= -1;
+    particle->xvelocity *= -1;
   }
   if (top_point < top_wall || bottom_point > bottom_wall) {
-    node->object.yvelocity *= -1;
+    particle->yvelocity *= -1;
   }
 }
 
-void calculate_location(Node *node) {
+void calculate_location(Circle *particle) {
   Uint32 time = SDL_GetTicks();
-  float dt = (time - node->object.lastupdated) / 1000.0f;
-  node->object.dy += node->object.yvelocity * dt;
-  node->object.dx += node->object.xvelocity * dt;
+  float dt = (time - particle->lastupdated) / 1000.0f;
+  particle->dy += particle->yvelocity * dt;
+  particle->dx += particle->xvelocity * dt;
 
   // need to multiply with -1 to reverse the direction of movement
-  node->object.ycenter += (-1.0) * node->object.yvelocity * dt;
-  node->object.xcenter += (-1.0) * node->object.xvelocity * dt;
+  particle->ycenter += (-1.0) * particle->yvelocity * dt;
+  particle->xcenter += (-1.0) * particle->xvelocity * dt;
 
-  node->object.lastupdated = time;
+  particle->lastupdated = time;
 }
