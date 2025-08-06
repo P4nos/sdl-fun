@@ -100,14 +100,12 @@ void init_state() {
   state.source.y = 100;
   state.source.width = 20;
   state.source.height = 20;
-  state.source.flow_rate = 5.0f;           // 5 particles per second
-  state.source.velocity_magnitude = 30.0f; // Initial particle speed
+  state.source.flow_rate = 100.0f;         // 5 particles per second
+  state.source.velocity_magnitude = 60.0f; // Initial particle speed
   state.source.last_spawn_time = SDL_GetTicks();
   state.source.is_active = 1;
   state.source.particles_spawned = 0;
   state.source.emitter_side = EMITTER_RIGHT; // Emit from right side
-
-  // No initial particles - let the source generate them
 }
 
 void update_particle_source() {
@@ -174,7 +172,8 @@ void update_particle_source() {
                            .radius = 2.0f,
                            .xvelocity = velocity_x,
                            .yvelocity = velocity_y,
-                           .m = 1.0f,
+                           .m = 200.0f,
+                           .restitution = 0.8f,
                            .dx = 0.0f,
                            .dy = 0.0f,
                            .color = Color_CIRCLE,

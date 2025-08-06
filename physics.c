@@ -120,11 +120,20 @@ void handle_border_collisions(Circle *particle) {
   float top_wall = BORDER_WIDTH;
   float bottom_wall = SCREEN_HEIGHT - BORDER_WIDTH;
 
-  if (left_point < left_wall || right_point > right_wall) {
-    particle->xvelocity *= -1;
+  if (left_point < left_wall) {
+    particle->xcenter = left_wall + particle->radius;
+    particle->xvelocity *= -particle->restitution;
+  } else if (right_point > right_wall) {
+    particle->xcenter = right_wall - particle->radius;
+    particle->xvelocity *= -particle->restitution;
   }
-  if (top_point < top_wall || bottom_point > bottom_wall) {
-    particle->yvelocity *= -1;
+  
+  if (top_point < top_wall) {
+    particle->ycenter = top_wall + particle->radius;
+    particle->yvelocity *= -particle->restitution;
+  } else if (bottom_point > bottom_wall) {
+    particle->ycenter = bottom_wall - particle->radius;
+    particle->yvelocity *= -particle->restitution;
   }
 }
 
