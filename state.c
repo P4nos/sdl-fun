@@ -176,7 +176,7 @@ void update_particle_source() {
                            .cor = 0.80f,
                            .dx = 0.0f,
                            .dy = 0.0f,
-                           .color = Color_CIRCLE,
+                           .color = USE_RANDOM_COLORS ? generate_random_color() : Color_CIRCLE,
                            .id = state.particle_count,
                            .lastupdated = current_time};
 
