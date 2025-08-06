@@ -84,6 +84,15 @@ void init_state() {
   state.fps = 0.0f;
   state.last_fps_update = SDL_GetTicks();
   state.frame_count = 0;
+  
+  // Initialize settings
+  state.settings.gravity = GRAVITY;
+  state.settings.num_particles = NUM_CIRCLES;
+  state.settings.initial_velocity_min = INITIAL_VELOCITY_MIN;
+  state.settings.initial_velocity_max = INITIAL_VELOCITY_MAX;
+  state.settings.show_settings = 0;
+  state.settings.is_paused = 0;
+  state.settings.show_velocity_vectors = 0;
 
   for (int i = 0; i < NUM_CIRCLES; i++) {
     Circle c = {.ycenter = (float)rand_int_range(INITIAL_Y_MIN, INITIAL_Y_MAX),
