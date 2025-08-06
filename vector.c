@@ -5,9 +5,6 @@ float eucledean_dist(float x, float y) { return sqrtf(x * x + y * y); }
 
 float mag_vector(Vector v) { return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z); }
 
-float rad_to_deg(float rad) { return rad * 180 / M_PI; }
-
-float get_object_direction(Vector v) { return M_2_PI - atanf(v.y / v.x); }
 
 Vector unit_vector(Vector v) {
   float mag = mag_vector(v);
