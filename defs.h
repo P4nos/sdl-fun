@@ -109,6 +109,10 @@ typedef struct State {
   ParticleSource source;
   SDL_Texture *circle_texture;
   int circle_texture_size;
+  SDL_Vertex *vertices;
+  int *indices;
+  int max_vertices;
+  int max_indices;
 } State;
 
 #endif

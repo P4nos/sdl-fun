@@ -4,6 +4,7 @@
 #include <SDL2/SDL_render.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 Color Color_RED = {255, 0, 0};
 Color Color_BLUE = {0, 0, 255};
@@ -56,6 +57,117 @@ SDL_Texture *create_circle_texture(int radius) {
   SDL_SetRenderTarget(state.renderer, original_target);
 
   return texture;
+}
+
+int init_batch_rendering() {
+  // Allocate vertex and index arrays for batched rendering
+  // Each particle needs 4 vertices (quad) and 6 indices (2 triangles)
+  state.max_vertices = MAX_SOURCE_PARTICLES * 4;
+  state.max_indices = MAX_SOURCE_PARTICLES * 6;
+  
+  state.vertices = malloc(state.max_vertices * sizeof(SDL_Vertex));
+  state.indices = malloc(state.max_indices * sizeof(int));
+  
+  if (!state.vertices || !state.indices) {
+    printf("Failed to allocate batch rendering arrays\n");
+    return -1;
+  }
+  
+  return 0;
+}
+
+void cleanup_batch_rendering() {
+  if (state.vertices) {
+    free(state.vertices);
+    state.vertices = NULL;
+  }
+  if (state.indices) {
+    free(state.indices);
+    state.indices = NULL;
+  }
+}
+
+void add_particle_to_batch(Circle *c, int particle_idx) {
+  if (particle_idx >= MAX_SOURCE_PARTICLES) return;
+  
+  int radius = (int)c->radius;
+  float center_x = c->xcenter;
+  float center_y = c->ycenter;
+  
+  // Calculate quad vertices
+  float left = center_x - radius;
+  float right = center_x + radius;
+  float top = center_y - radius;
+  float bottom = center_y + radius;
+  
+  int vertex_offset = particle_idx * 4;
+  int index_offset = particle_idx * 6;
+  
+  // Set vertex positions and texture coordinates
+  // Top-left
+  state.vertices[vertex_offset + 0].position.x = left;
+  state.vertices[vertex_offset + 0].position.y = top;
+  state.vertices[vertex_offset + 0].tex_coord.x = 0.0f;
+  state.vertices[vertex_offset + 0].tex_coord.y = 0.0f;
+  state.vertices[vertex_offset + 0].color.r = c->color.r;
+  state.vertices[vertex_offset + 0].color.g = c->color.g;
+  state.vertices[vertex_offset + 0].color.b = c->color.b;
+  state.vertices[vertex_offset + 0].color.a = 255;
+  
+  // Top-right
+  state.vertices[vertex_offset + 1].position.x = right;
+  state.vertices[vertex_offset + 1].position.y = top;
+  state.vertices[vertex_offset + 1].tex_coord.x = 1.0f;
+  state.vertices[vertex_offset + 1].tex_coord.y = 0.0f;
+  state.vertices[vertex_offset + 1].color.r = c->color.r;
+  state.vertices[vertex_offset + 1].color.g = c->color.g;
+  state.vertices[vertex_offset + 1].color.b = c->color.b;
+  state.vertices[vertex_offset + 1].color.a = 255;
+  
+  // Bottom-left
+  state.vertices[vertex_offset + 2].position.x = left;
+  state.vertices[vertex_offset + 2].position.y = bottom;
+  state.vertices[vertex_offset + 2].tex_coord.x = 0.0f;
+  state.vertices[vertex_offset + 2].tex_coord.y = 1.0f;
+  state.vertices[vertex_offset + 2].color.r = c->color.r;
+  state.vertices[vertex_offset + 2].color.g = c->color.g;
+  state.vertices[vertex_offset + 2].color.b = c->color.b;
+  state.vertices[vertex_offset + 2].color.a = 255;
+  
+  // Bottom-right
+  state.vertices[vertex_offset + 3].position.x = right;
+  state.vertices[vertex_offset + 3].position.y = bottom;
+  state.vertices[vertex_offset + 3].tex_coord.x = 1.0f;
+  state.vertices[vertex_offset + 3].tex_coord.y = 1.0f;
+  state.vertices[vertex_offset + 3].color.r = c->color.r;
+  state.vertices[vertex_offset + 3].color.g = c->color.g;
+  state.vertices[vertex_offset + 3].color.b = c->color.b;
+  state.vertices[vertex_offset + 3].color.a = 255;
+  
+  // Set indices for two triangles (quad)
+  int base_vertex = vertex_offset;
+  state.indices[index_offset + 0] = base_vertex + 0; // Top-left
+  state.indices[index_offset + 1] = base_vertex + 1; // Top-right
+  state.indices[index_offset + 2] = base_vertex + 2; // Bottom-left
+  state.indices[index_offset + 3] = base_vertex + 1; // Top-right
+  state.indices[index_offset + 4] = base_vertex + 3; // Bottom-right
+  state.indices[index_offset + 5] = base_vertex + 2; // Bottom-left
+}
+
+void render_particles_batched() {
+  if (!state.circle_texture || !state.vertices || !state.indices || state.particle_count == 0) {
+    return;
+  }
+  
+  // Build vertex array for all particles
+  for (int i = 0; i < state.particle_count; i++) {
+    add_particle_to_batch(&state.particles[i], i);
+  }
+  
+  // Render all particles in one call
+  SDL_RenderGeometry(state.renderer, state.circle_texture, 
+                     state.vertices, state.particle_count * 4,
+                     state.indices, state.particle_count * 6);
 }
 
 void draw_circle(Circle *c) {
@@ -122,6 +234,9 @@ void draw_particle_source() {
 }
 
 void cleanup() {
+  // Cleanup batch rendering
+  cleanup_batch_rendering();
+
   // Destroy circle texture
   if (state.circle_texture) {
     SDL_DestroyTexture(state.circle_texture);
@@ -234,6 +349,11 @@ int setup() {
   state.circle_texture_size = default_radius * 2;
   if (!state.circle_texture) {
     printf("Warning: Could not create circle texture\n");
+  }
+
+  // Initialize batch rendering
+  if (init_batch_rendering() < 0) {
+    printf("Warning: Could not initialize batch rendering\n");
   }
 
   return 0;
@@ -453,12 +573,16 @@ void draw_settings_panel() {
 }
 
 void render() {
-  for (int i = 0; i < state.particle_count; i++) {
-    draw_circle(&state.particles[i]);
-    if (state.settings.show_velocity_vectors) {
+  // Render all particles in a single batched call
+  render_particles_batched();
+  
+  // Render velocity vectors if enabled
+  if (state.settings.show_velocity_vectors) {
+    for (int i = 0; i < state.particle_count; i++) {
       draw_velocity_vector(&state.particles[i]);
     }
   }
+  
   draw_borders();
   // draw_particle_source();
   draw_settings_panel();
