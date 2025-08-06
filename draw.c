@@ -226,59 +226,36 @@ void draw_settings_panel() {
   if (!state.settings.show_settings || !state.font)
     return;
 
-  // Calculate panel position (top-right corner, below FPS counter)
-  int panel_x = SCREEN_WIDTH - SETTINGS_PANEL_WIDTH - SETTINGS_PANEL_MARGIN;
-  int panel_y = 50; // Start below FPS counter
+  // Calculate panel positio
+  int panel_x = SCREEN_WIDTH - SETTINGS_PANEL_WIDTH;
+  int panel_y = 10;
 
-  // Draw panel background
-  SDL_Rect panel_rect = {panel_x, panel_y, SETTINGS_PANEL_WIDTH,
-                         SETTINGS_PANEL_HEIGHT};
-  SDL_SetRenderDrawColor(state.renderer, 40, 40, 40, 200);
-  SDL_RenderFillRect(state.renderer, &panel_rect);
-
-  // Draw panel border
-  SDL_SetRenderDrawColor(state.renderer, 255, 255, 255, 255);
-  SDL_RenderDrawRect(state.renderer, &panel_rect);
+  // No background or border for settings panel
 
   SDL_Color white = {255, 255, 255, 255};
   char text[128];
   int y_offset = panel_y + 20;
   int line_height = 25;
 
-  // Title
-  SDL_Surface *title_surface =
-      TTF_RenderText_Solid(state.font, "Settings", white);
-  if (title_surface) {
-    SDL_Texture *title_texture =
-        SDL_CreateTextureFromSurface(state.renderer, title_surface);
-    if (title_texture) {
-      SDL_Rect title_rect = {panel_x + 10, y_offset, title_surface->w,
-                             title_surface->h};
-      SDL_RenderCopy(state.renderer, title_texture, NULL, &title_rect);
-      SDL_DestroyTexture(title_texture);
+  // FPS counter
+  char fps_text[32];
+  snprintf(fps_text, sizeof(fps_text), "FPS: %.0f", state.fps);
+  SDL_Surface *fps_surface = TTF_RenderText_Solid(state.font, fps_text, white);
+  if (fps_surface) {
+    SDL_Texture *fps_texture =
+        SDL_CreateTextureFromSurface(state.renderer, fps_surface);
+    if (fps_texture) {
+      SDL_Rect fps_rect = {panel_x + 10, y_offset, fps_surface->w,
+                           fps_surface->h};
+      SDL_RenderCopy(state.renderer, fps_texture, NULL, &fps_rect);
+      SDL_DestroyTexture(fps_texture);
     }
-    SDL_FreeSurface(title_surface);
-  }
-  y_offset += line_height * 2;
-
-  // Gravity setting
-  snprintf(text, sizeof(text), "Gravity: %.2f", state.settings.gravity);
-  SDL_Surface *gravity_surface = TTF_RenderText_Solid(state.font, text, white);
-  if (gravity_surface) {
-    SDL_Texture *gravity_texture =
-        SDL_CreateTextureFromSurface(state.renderer, gravity_surface);
-    if (gravity_texture) {
-      SDL_Rect gravity_rect = {panel_x + 10, y_offset, gravity_surface->w,
-                               gravity_surface->h};
-      SDL_RenderCopy(state.renderer, gravity_texture, NULL, &gravity_rect);
-      SDL_DestroyTexture(gravity_texture);
-    }
-    SDL_FreeSurface(gravity_surface);
+    SDL_FreeSurface(fps_surface);
   }
   y_offset += line_height;
 
-  // Particle count setting
-  snprintf(text, sizeof(text), "Particles: %d", state.settings.num_particles);
+  // Particle count (particles_spawned)
+  snprintf(text, sizeof(text), "Particles: %d", state.source.particles_spawned);
   SDL_Surface *particles_surface =
       TTF_RenderText_Solid(state.font, text, white);
   if (particles_surface) {
@@ -291,24 +268,6 @@ void draw_settings_panel() {
       SDL_DestroyTexture(particles_texture);
     }
     SDL_FreeSurface(particles_surface);
-  }
-  y_offset += line_height;
-
-  // Velocity range setting
-  snprintf(text, sizeof(text), "Velocity: %.0f to %.0f",
-           state.settings.initial_velocity_min,
-           state.settings.initial_velocity_max);
-  SDL_Surface *velocity_surface = TTF_RenderText_Solid(state.font, text, white);
-  if (velocity_surface) {
-    SDL_Texture *velocity_texture =
-        SDL_CreateTextureFromSurface(state.renderer, velocity_surface);
-    if (velocity_texture) {
-      SDL_Rect velocity_rect = {panel_x + 10, y_offset, velocity_surface->w,
-                                velocity_surface->h};
-      SDL_RenderCopy(state.renderer, velocity_texture, NULL, &velocity_rect);
-      SDL_DestroyTexture(velocity_texture);
-    }
-    SDL_FreeSurface(velocity_surface);
   }
   y_offset += line_height * 2;
 
@@ -443,8 +402,7 @@ void render() {
     }
   }
   draw_borders();
-  draw_particle_source();
-  draw_fps();
+  // draw_particle_source();
   draw_settings_panel();
   present();
 }

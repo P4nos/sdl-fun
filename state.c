@@ -95,17 +95,17 @@ void init_state() {
   state.settings.is_paused = 0;
   state.settings.show_velocity_vectors = 0;
 
-  // Initialize particle source (touching left border)
-  state.source.x = BORDER_WIDTH;
-  state.source.y = 100;
-  state.source.width = 20;
-  state.source.height = 20;
-  state.source.flow_rate = 10.0f;
-  state.source.velocity_magnitude = 60.0f; // Initial particle speed
+  // Initialize particle source using constants
+  state.source.x = SOURCE_X;
+  state.source.y = SOURCE_Y;
+  state.source.width = SOURCE_SIZE;
+  state.source.height = SOURCE_SIZE;
+  state.source.flow_rate = SOURCE_FLOW_RATE;
+  state.source.velocity_magnitude = SOURCE_VELOCITY_MAGNITUDE;
   state.source.last_spawn_time = SDL_GetTicks();
   state.source.is_active = 1;
   state.source.particles_spawned = 0;
-  state.source.emitter_side = EMITTER_RIGHT; // Emit from right side
+  state.source.emitter_side = EMITTER_RIGHT;
 }
 
 void update_particle_source() {
@@ -173,7 +173,7 @@ void update_particle_source() {
                            .xvelocity = velocity_x,
                            .yvelocity = velocity_y,
                            .m = 20.0f,
-                           .cor = 0.90f,
+                           .cor = 0.80f,
                            .dx = 0.0f,
                            .dy = 0.0f,
                            .color = Color_CIRCLE,

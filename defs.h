@@ -26,7 +26,14 @@
 #define INITIAL_VELOCITY_MIN 0
 #define INITIAL_VELOCITY_MAX 5
 
-#define MAX_SOURCE_PARTICLES 200
+#define MAX_SOURCE_PARTICLES 20000
+
+// Particle Source Constants
+#define SOURCE_X BORDER_WIDTH
+#define SOURCE_Y 100
+#define SOURCE_SIZE 30
+#define SOURCE_FLOW_RATE 200.0f
+#define SOURCE_VELOCITY_MAGNITUDE 40.0f
 
 #define SETTINGS_PANEL_WIDTH 250
 #define SETTINGS_PANEL_HEIGHT 450
@@ -46,8 +53,9 @@ typedef struct Circle {
   float yvelocity;
   float xvelocity;
   float lastupdated;
-  float m;           // mass
-  float cor; // coefficient of restitution (0.0 = no bounce, 1.0 = perfect bounce)
+  float m; // mass
+  float
+      cor; // coefficient of restitution (0.0 = no bounce, 1.0 = perfect bounce)
   Color color;
   int id;
 } Circle;
