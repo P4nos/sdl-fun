@@ -1,6 +1,7 @@
 #include "physics.h"
 #include "vector.h"
 #include <SDL2/SDL_timer.h>
+#include <math.h>
 
 extern State state;
 
@@ -9,6 +10,23 @@ int is_same_particle(int indexa, int indexb) {
 }
 
 void resolve_collision(Circle *c1, Circle *c2) {
+  // Calculate distance and separation first
+  float dx = c1->xcenter - c2->xcenter;
+  float dy = c1->ycenter - c2->ycenter;
+  float dist = sqrtf(dx * dx + dy * dy);
+  float overlap = (c1->radius + c2->radius) - dist;
+
+  // Separate overlapping particles
+  if (overlap > 0 && dist > 0) {
+    float separation_x = (dx / dist) * (overlap * 0.5f);
+    float separation_y = (dy / dist) * (overlap * 0.5f);
+
+    c1->xcenter += separation_x;
+    c1->ycenter += separation_y;
+    c2->xcenter -= separation_x;
+    c2->ycenter -= separation_y;
+  }
+
   // follow the 7 steps https://www.vobarian.com/collisions/2dcollisions2.pdf
 
   // step 1: Find the unit tangent and unit normal vectors
@@ -32,11 +50,14 @@ void resolve_collision(Circle *c1, Circle *c2) {
   float v1_t_prime = v1_t;
   float v2_t_prime = v2_t;
 
-  // step 5: Find the new normal velocities
+  // step 5: Find the new normal velocities using inelastic collision formula
+  float combined_cor = sqrtf(c1->cor * c2->cor);
+  float total_mass = c1->m + c2->m;
+
   float v1_n_prime =
-      (v1_n * (c1->m - c2->m) + 2 * c2->m * v2_n) / (c1->m + c2->m);
+      v1_n + (1.0f + combined_cor) * (v2_n - v1_n) * c2->m / total_mass;
   float v2_n_prime =
-      (v2_n * (c2->m - c1->m) + 2 * c1->m * v1_n) / (c1->m + c2->m);
+      v2_n + (1.0f + combined_cor) * (v1_n - v2_n) * c1->m / total_mass;
 
   Vector v1_n_prime_vec = scale_vector(v1_n_prime, u_n);
   Vector v1_t_prime_vec = scale_vector(v1_t_prime, u_t);
@@ -122,18 +143,18 @@ void handle_border_collisions(Circle *particle) {
 
   if (left_point < left_wall) {
     particle->xcenter = left_wall + particle->radius;
-    particle->xvelocity *= -particle->restitution;
+    particle->xvelocity *= -particle->cor;
   } else if (right_point > right_wall) {
     particle->xcenter = right_wall - particle->radius;
-    particle->xvelocity *= -particle->restitution;
+    particle->xvelocity *= -particle->cor;
   }
-  
+
   if (top_point < top_wall) {
     particle->ycenter = top_wall + particle->radius;
-    particle->yvelocity *= -particle->restitution;
+    particle->yvelocity *= -particle->cor;
   } else if (bottom_point > bottom_wall) {
     particle->ycenter = bottom_wall - particle->radius;
-    particle->yvelocity *= -particle->restitution;
+    particle->yvelocity *= -particle->cor;
   }
 }
 

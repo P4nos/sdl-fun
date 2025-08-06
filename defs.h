@@ -47,8 +47,7 @@ typedef struct Circle {
   float xvelocity;
   float lastupdated;
   float m;           // mass
-  float restitution; // restitution coefficient (0.0 = no bounce, 1.0 = perfect
-                     // bounce)
+  float cor; // coefficient of restitution (0.0 = no bounce, 1.0 = perfect bounce)
   Color color;
   int id;
 } Circle;
