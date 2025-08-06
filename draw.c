@@ -253,26 +253,6 @@ void render_particles_batched() {
                      state.particle_count * 6);
 }
 
-void draw_circle(Circle *c) {
-  if (!state.circle_texture) {
-    return;
-  }
-
-  int radius = (int)c->radius;
-  int center_x = (int)round(c->xcenter);
-  int center_y = (int)round(c->ycenter);
-
-  // Set color modulation for the texture
-  SDL_SetTextureColorMod(state.circle_texture, c->color.r, c->color.g,
-                         c->color.b);
-
-  // Calculate destination rectangle
-  SDL_Rect dest_rect = {center_x - radius, center_y - radius, radius * 2,
-                        radius * 2};
-
-  // Render the texture
-  SDL_RenderCopy(state.renderer, state.circle_texture, NULL, &dest_rect);
-}
 
 void draw_velocity_vector(Circle *c) {
   // Skip if velocity is zero to avoid drawing zero-length vectors
@@ -296,25 +276,6 @@ void draw_velocity_vector(Circle *c) {
                      (int)(c->xcenter + dx), (int)(c->ycenter + dy));
 }
 
-void draw_particle_source() {
-  // Draw source rectangle
-  SDL_Rect source_rect = {(int)state.source.x, (int)state.source.y,
-                          (int)state.source.width, (int)state.source.height};
-
-  if (state.source.is_active) {
-    // Active source: green border with semi-transparent fill
-    SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255); // Green border
-    SDL_RenderDrawRect(state.renderer, &source_rect);
-
-    SDL_SetRenderDrawColor(state.renderer, 0, 255, 0,
-                           64); // Semi-transparent green fill
-    SDL_RenderFillRect(state.renderer, &source_rect);
-  } else {
-    // Inactive source: red border
-    SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255); // Red border
-    SDL_RenderDrawRect(state.renderer, &source_rect);
-  }
-}
 
 void cleanup() {
   // Cleanup UI cache
@@ -450,46 +411,6 @@ int setup() {
   return 0;
 }
 
-void draw_fps() {
-  char fps_text[32];
-  snprintf(fps_text, sizeof(fps_text), "FPS: %.0f", state.fps);
-
-  // Create surface from text
-  SDL_Color white = {255, 255, 255, 255};
-  SDL_Surface *text_surface = TTF_RenderText_Solid(state.font, fps_text, white);
-  if (!text_surface) {
-    return;
-  }
-
-  // Create texture from surface
-  SDL_Texture *text_texture =
-      SDL_CreateTextureFromSurface(state.renderer, text_surface);
-  if (!text_texture) {
-    SDL_FreeSurface(text_surface);
-    return;
-  }
-
-  // Get text dimensions
-  int text_width = text_surface->w;
-  int text_height = text_surface->h;
-  SDL_FreeSurface(text_surface);
-
-  // Position text in top-right corner
-  SDL_Rect text_rect = {SCREEN_WIDTH - text_width - 10, 10, text_width,
-                        text_height};
-
-  // Draw background rectangle
-  SDL_Rect bg_rect = {text_rect.x - 5, text_rect.y - 2, text_width + 10,
-                      text_height + 4};
-  set_draw_color(Color_BLACK);
-  SDL_RenderFillRect(state.renderer, &bg_rect);
-
-  // Render text
-  SDL_RenderCopy(state.renderer, text_texture, NULL, &text_rect);
-
-  // Cleanup
-  SDL_DestroyTexture(text_texture);
-}
 
 void update_dynamic_ui_textures() {
   SDL_Color white = {255, 255, 255, 255};
@@ -597,7 +518,6 @@ void render() {
   }
 
   draw_borders();
-  // draw_particle_source();
   draw_settings_panel();
   present();
 }
